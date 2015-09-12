@@ -1,0 +1,55 @@
+#!/bin/sh
+#
+# cron script to save a backup copy of /etc/samba/smbpasswd in /var/backups.
+#
+# Written by Eloy A. Paris <peloy@debian.org> for the Debian project.
+#
+
+VHOSTS_DIR=/home/vhosts
+EMAIL=sites1@sfs.it
+NDAYS=1
+umask 022
+if [ "x$1" != "x" ]; then
+	if [ "$1" = "NOMAIL" -o "$1" = "nomail" ]; then
+		[ "x$1" = "xNOMAIL" ] && EMAIL=""
+		[ "x$2" != "x" ] && NDAYS="$2"
+	else
+		NDAYS="$1"
+	fi
+fi
+STARTTIMEMARK="$(date -d "$NDAYS day ago" "+%Y%m%d%H%M")"
+ENDTIMEMARK="$(date "+%Y%m%d%H%M")"
+MFILE="mfiles_$STARTTIMEMARK-$ENDTIMEMARK"
+touch -t "$STARTTIMEMARK" "/tmp/$MFILE.ls"
+HOSTNAME="$(hostname)"
+STARTDATE="$(date -d "$NDAYS day ago" "+%H:%M %d/%m/%Y")"
+ENDDATE="$(date "+%H:%M %d/%m/%Y")"
+echo "$HOSTNAME MODIFIED FILES FROM $STARTDATE TO $ENDDATE" > "/tmp/$MFILE.head"
+if cd $VHOSTS_DIR; then
+	for VHOST_ACCOUNTFILE in $(ls -1 $VHOSTS_DIR/*/account.txt); do
+		VHOST_PATH="$(echo $VHOST_ACCOUNTFILE | sed -E 's/\/account.txt$//')"
+		find $VHOST_PATH/httpdocs -newer "/tmp/$MFILE.ls" -ls | sed "s#$VHOST_PATH/httpdocs/#  #" | grep -v "$VHOST_PATH/httpdocs"  > "$VHOST_PATH/$MFILE.ls"
+		if [ -s "$VHOST_PATH/$MFILE.ls" ]; then 
+			VHOST_HOSTNAME="$(echo "$VHOST_PATH" | sed "s#$VHOSTS_DIR/##")" 
+			VHOST_EMAIL="$(cat "$VHOST_ACCOUNTFILE" | grep 'WEBMASTER EMAIL:' | sed 's/^WEBMASTER EMAIL:\s*//')"
+			if [ "x$EMAIL" != "x"  -a "x$VHOST_EMAIL" != "x$EMAIL" -a -x /usr/sbin/sendmail ]; then
+				echo "$HOSTNAME => $VHOST_HOSTNAME MODIFIED FILES FROM $STARTDATE TO $ENDDATE" > "/tmp/$MFILE-$VHOST_HOSTNAME.head"
+				cat "$VHOST_PATH/$MFILE.ls" | sed "s#**$VHOSTS_DIR/#VHOST:#" > "/tmp/$MFILE-$VHOST_HOSTNAME.ls"
+				cat "/tmp/$MFILE-$VHOST_HOSTNAME.head" "/tmp/$MFILE-$VHOST_HOSTNAME.ls" | mail -s "$(cat "/tmp/$MFILE-$VHOST_HOSTNAME.head")" "$VHOST_EMAIL"
+				rm "/tmp/$MFILE-$VHOST_HOSTNAME.head" "/tmp/$MFILE-$VHOST_HOSTNAME.ls" "$VHOST_PATH/$MFILE.ls" 
+			fi
+		else
+			rm "$VHOST_PATH/$MFILE.ls"
+		fi
+	done
+	find "$VHOSTS_DIR"  -maxdepth 2 -name "*.ls" -exec echo -n "**" \; -exec dirname {} \; -exec cat {} \; -exec rm {} \;  | sed "s#**$VHOSTS_DIR/#VHOST:#" > "/tmp/$MFILE.ls"
+	if [ -s "/tmp/$MFILE.ls" ]; then
+		if [  -x /usr/sbin/sendmail -a "x$EMAIL" != "x" ]; then
+			cat "/tmp/$MFILE.head" "/tmp/$MFILE.ls" | mail -s "$(cat "/tmp/$MFILE.head")" "$EMAIL"
+		else
+			cat "/tmp/$MFILE.head" "/tmp/$MFILE.ls"
+		fi
+	fi
+fi
+rm  "/tmp/$MFILE.head" "/tmp/$MFILE.ls"
+

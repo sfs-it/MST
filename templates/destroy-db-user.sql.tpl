@@ -1,0 +1,3 @@
+# REVOKE ALL PRIVILEGES, GRANT OPTION  ON `{$USER}`.* FROM '{$USER}'@'localhost';
+DROP DATABASE IF EXISTS `{$USER}`;
+DROP USER '{$USER}'@'localhost';

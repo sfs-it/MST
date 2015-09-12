@@ -1,0 +1,23 @@
+NEW USER/VHOST CREATED FOR http://{$HOSTNAME}
+; original hostname when created the vhost
+
+DOMAIN: {$DOMAIN}
+
+VHOST: http://{$VHOST}
+VHOST-ALIAS: http://{$VHOST_ONDOMAIN}.{$MY_DOMAIN}
+             http://{$HOSTNAME}/{$USER}
+             http://{$HOSTNAME}/{$VHOST_ONDOMAIN}
+             http://{$HOSTNAME}/{$VHOST}
+
+USER: {$USER}
+UID: {$UID}
+GID: {$GID}
+PWD_FTP: {$PWD_FTP}
+PWD_MYSQL: {$PWD_MYSQL}
+
+VHOST_EMAIL: {$VHOST_EMAIL}
+ADMIN_EMAIL: {$ADMIN_EMAIL}
+
+GRIVE_EMAIL: {$GRIVE_EMAIL}
+GRIVE_DIR:   {$GRIVE_DIR}
+GRIVE_SUBDIR_BACKUPS: {$GRIVE_SUBDIR_BACKUPS}
