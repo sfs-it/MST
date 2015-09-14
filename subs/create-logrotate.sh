@@ -16,6 +16,9 @@ SETTINGS_FILE="/etc/SFSit_MST.conf.sh"
 test -s "~/SFSit_MST.conf.sh" && SETTINGS_FILE="~/SFSit_MST.conf.sh"
 if [ -s "$SETTINGS_FILE" ]; then
 	VHOSTS_DIR="$(sh "$SETTINGS_FILE" VHOSTS_DIR)"
+	APACHE_VERSION="$(sh "$SETTINGS_FILE" APACHE_VERSION)"
+	[ "x$APACHE_VERSION" != 'xapache22' -a "x$APACHE_VERSION" != 'xapache24' ] && APACHE_VERSION='apache22'
+
 fi
 PWD_SRC="$(pwd)"
 cd $(dirname $0) 
@@ -27,15 +30,22 @@ exit_with_error(){
 
 [ "x$1" = 'x' ] && exit_with_error "$SYNTAX : VHOST needed"
 
+if [ "$( uname )" = 'FreeBSD' ]; then
+	LOGROTATE_DIR='/usr/local/etc/logrotate.d'
+elif [ "$( uname )" = 'Linux' ]; then
+	LOGROTATE_DIR='/etc/logrotate.d'
+fi
+
+
 VHOST=$1
 VHOST_ACCOUNTFILE="$VHOSTS_DIR/$VHOST/account.txt";
 [ -s "$VHOST_ACCOUNTFILE" ] || exit_with_error "ERROR: CANNOT LOAD 'account.txt' FOR $VHOST"
-USER="$(cat "$VHOST_ACCOUNTFILE" | grep 'USER:' | sed 's/^USER:\s*//')"
+USER="$(cat "$VHOST_ACCOUNTFILE" | grep 'USER:' | sed 's/^USER:\s*//' | sed 's/^[[:blank:]]*//g')"
 
 ( cat "../templates/logrotate-apache2-vhost.tpl" \
 	| sed -E "s#\\{\\\$VHOSTS_DIR\\}#$VHOSTS_DIR#g" \
 	| sed -E "s#\\{\\\$VHOST\\}#$VHOST#g" \
     | sed -E "s#\\{\\\$USER\\}#$USER#g" \
-	> "/etc/logrotate.d/apache2-vhost-$VHOST") || exit_with_error "ERROR: saving 'apache2-vhost-$VHOST'"
+	> "$LOGROTATE_DIR/$APACHE_VERSION-vhost-$VHOST.conf") || exit_with_error "ERROR: saving '$APACHE_VERSION-vhost-$VHOST.conf'"
 cd "$PWD_SRC"
 exit 0

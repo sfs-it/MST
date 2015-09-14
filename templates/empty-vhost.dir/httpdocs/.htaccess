@@ -6,10 +6,6 @@
 # Joomla! is Free Software
 ##
 
-
-##  Can be commented out if causes errors, see notes above.
-Options +FollowSymLinks
-
 #
 #  mod_rewrite in use
 
@@ -37,8 +33,11 @@ RewriteRule ^(.*)$ index.php [F,L]
 # Begin: DOMINIO => www.DOMINIO
 RewriteCond %{HTTP_HOST} !^www\..* [NC]
 RewriteCond %{HTTP_HOST} !^www2\..* [NC]
+RewriteCond %{HTTP_HOST} !^sites\d?\..* [NC]
+RewriteCond %{HTTP_HOST} !^sites\d?-devel\..* [NC]
+RewriteCond %{HTTP_HOST} !^www-devel\d?\..* [NC]
 RewriteRule ^(.*)$ http://www.%{HTTP_HOST}/$1 [R=301,L]
-# Begin: DOMINIO => www.DOMINIO
+# End: DOMINIO => www.DOMINIO
 
 # Begin: /sitemap.xml 
 # redirect to index.php?option=com_xmap&view=xml

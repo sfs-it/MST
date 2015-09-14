@@ -26,18 +26,33 @@ exit_with_error(){
 }
 
 [ "x$1" = 'x' ] && exit_with_error "$SYNTAX : VHOST needed"
+if [ "$( uname )" = 'FreeBSD' ]; then
+        SAMBA_CONF_FILE='/usr/local/etc/smb4.conf'
+        SAMBA_VHOSTS_CONF_FILE='/usr/local/etc/smb4.vhosts.conf'
+        SAMBA_CONF_DIR='/usr/local/etc/smb4.conf.d'
+elif [ "$( uname )" = 'Linux' ]; then
+        SAMBA_CONF_FILE='/etc/sama/smb.conf'
+        SAMBA_VHOSTS_CONF_FILE='/etc/samba/smb.vhosts.conf'
+        SAMBA_CONF_DIR='/etc/samba/smb.conf.d'
+fi
+
 
 VHOST=$1
 VHOST_ACCOUNTFILE="$VHOSTS_DIR/$VHOST/account.txt";
 [ -s "$VHOST_ACCOUNTFILE" ] || exit_with_error "ERROR: CANNOT LOAD 'account.txt' FOR $VHOST"
-USER="$(cat "$VHOST_ACCOUNTFILE" | grep 'USER:' | sed 's/^USER:\s*//')"
+USER="$(cat "$VHOST_ACCOUNTFILE" | grep 'USER:' | sed 's/^USER:\s*//' | sed 's/^[[:blank:]]*//g')"
 
 cat "../templates/vhost.smb.conf.tpl" \
 	| sed -E "s#\\{\\\$VHOSTS_DIR\\}#$VHOSTS_DIR#g" \
 	| sed -E "s#\\{\\\$VHOST\\}#$VHOST#g" \
-    | sed -E "s#\\{\\\$USER\\}#$USER#g" \
-	> "/etc/samba/smb.conf.d/$VHOST.smb.conf" || exit_with_error "ERROR: saving '$VHOST.smb.conf'"
-echo "include = /etc/samba/smb.conf.d/$VHOST.smb.conf" >> /etc/samba/smb.conf.vhosts  || exit_with_error "ERROR: updating 'smb.conf.vhosts'"
-service smbd restart || exit_with_error "ERROR: restating smb"
+	| sed -E "s#\\{\\\$USER\\}#$USER#g" \
+	> "$SAMBA_CONF_DIR/$VHOST.smb.conf" || exit_with_error "ERROR: saving '$VHOST.smb.conf'"
+echo "include = \"$SAMBA_CONF_DIR/$VHOST.smb.conf\"" >> $SAMBA_VHOSTS_CONF_FILE  || exit_with_error "ERROR: updating '$( basename $SAMBA_VHOSTS_CONF_FILE )'"
+if [ "$( uname )" = 'FreeBSD' ]; then
+	service samba_server restart || exit_with_error "ERROR: restating smb"
+elif [ "$( uname )" = 'Linux' ]; then
+	service smbd restart || exit_with_error "ERROR: restating smb"
+fi
+
 cd "$PWD_SRC"
 exit 0
