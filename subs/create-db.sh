@@ -31,11 +31,11 @@ exit_with_error(){
 VHOST=$1
 VHOST_ACCOUNTFILE="$VHOSTS_DIR/$VHOST/account.txt";
 [ -s "$VHOST_ACCOUNTFILE" ] || exit_with_error "ERROR: CANNOT LOAD 'account.txt' FOR $VHOST"
-USER="`cat $VHOST_ACCOUNTFILE | grep 'USER:' | sed 's/^USER:\s*//'`"
+USER="$(cat $VHOST_ACCOUNTFILE | grep 'USER:' | sed 's/^USER:\s*//' | sed 's/^[[:blank:]]*//g' | sed 's/^[[:blank:]]*//g')"
 PWD_MYSQL="$(cat $VHOST_ACCOUNTFILE | grep 'PWD_MYSQL:' | sed 's/^PWD_MYSQL:\s*//')"
 ( cat "../templates/create-db-user.sql.tpl" \
 	| sed -E "s/\\{\\\$USER\\}/$USER/g" \
-    | sed -E "s/\\{\\\$PWD_MYSQL\\}/$(echo $PWD_MYSQL | sed 's;&;\\&;g')/g" \
+	| sed -E "s/\\{\\\$PWD_MYSQL\\}/$(echo $PWD_MYSQL | sed 's;&;\\&;g')/g" \
 	| mysql --password="$MYSQL_ROOT_PWD" ) || exit_with_error "ERROR: CREATING USER AND DB"
 cd "$PWD_SRC"
 exit 0
