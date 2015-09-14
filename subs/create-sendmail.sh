@@ -34,9 +34,9 @@ exit_with_error(){
 VHOST=$1
 VHOST_ACCOUNTFILE="$VHOSTS_DIR/$VHOST/account.txt";
 [ -s "$VHOST_ACCOUNTFILE" ] || exit_with_error "ERROR: CANNOT LOAD 'account.txt' FOR $VHOST"
-VHOST_EMAIL="$( cat "$VHOST_ACCOUNTFILE" | grep 'VHOST_EMAIL:' | sed 's/^VHOST_EMAIL:\s*//' )"
+VHOST_EMAIL="$( cat "$VHOST_ACCOUNTFILE" | grep 'VHOST_EMAIL:' | sed 's/^VHOST_EMAIL:\s*//' | sed 's/^[[:blank:]]*//g' )"
 test "x$VHOST_EMAIL" = "x" && VHOST_EMAIL="$(sh "$SETTINGS_FILE" HOST_EMAIL)"
-ADMIN_EMAIL="$( cat "$VHOST_ACCOUNTFILE" | grep 'ADMIN_EMAIL:' | sed 's/^ADMIN_EMAIL:\s*//' )"
+ADMIN_EMAIL="$( cat "$VHOST_ACCOUNTFILE" | grep 'ADMIN_EMAIL:' | sed 's/^ADMIN_EMAIL:\s*//' | sed 's/^[[:blank:]]*//g' )"
 test "x$ADMIN_EMAIL" = "x" && ADMIN_EMAIL="$(sh "$SETTINGS_FILE" ADMIN_EMAIL)"
 
 mst_sendmail "$VHOST_EMAIL" "$ADMIN_EMAIL" "new user created for $HOSTNAME" "$VHOST_ACCOUNTFILE" || exit_with_error "ERROR: on SENDING EMAIL TO '$ADMIN_EMAIL'"
