@@ -17,9 +17,10 @@
 	<Directory {$VHOSTS_DIR}/{$VHOST}/httpdocs>
                 AllowOverride FileInfo AuthConfig Limit Indexes
                 Options MultiViews Indexes SymLinksIfOwnerMatch IncludesNoExec FollowSymLinks
+                AllowOverrideList Redirect RedirectMatch
                 Require method GET POST OPTIONS
-                Require all granted
         </Directory>
+
 
         ScriptAlias /cgi-bin/ /usr/lib/cgi-bin/
         <Directory "/usr/lib/cgi-bin">
@@ -45,9 +46,10 @@ Alias /{$VHOST_ONDOMAIN} {$VHOSTS_DIR}/{$VHOST}/httpdocs
 Alias /{$VHOST} {$VHOSTS_DIR}/{$VHOST}/httpdocs
 
 <Directory /home/vhosts/www.sfs.it/httpdocs>
-        AllowOverride FileInfo AuthConfig Limit Indexes
-        Options MultiViews Indexes SymLinksIfOwnerMatch IncludesNoExec FollowSymLinks
-        Require method GET POST OPTIONS
-        Require all granted
+	AllowOverride FileInfo AuthConfig Limit Indexes
+	Options MultiViews Indexes SymLinksIfOwnerMatch IncludesNoExec FollowSymLinks
+	AllowOverrideList Redirect RedirectMatch
+	Require method GET POST OPTIONS
 </Directory>
+
 

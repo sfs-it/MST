@@ -31,7 +31,7 @@ exit_with_error(){
 VHOST=$1
 VHOST_ACCOUNTFILE="$VHOSTS_DIR/$VHOST/account.txt";
 [ -s "$VHOST_ACCOUNTFILE" ] || exit_with_error "ERROR: CANNOT LOAD 'account.txt' FOR $VHOST"
-USER="`cat $VHOST_ACCOUNTFILE | grep 'USER:' | sed 's/^USER:\s*//'`"
+USER="$(cat $VHOST_ACCOUNTFILE | grep 'USER:' | sed 's/^USER:\s*//' | sed 's/^[[:blank:]]*//g')"
 ( cat ../templates/destroy-db-user.sql.tpl \
 	| sed -E "s/\\{\\\$USER\\}/$USER/g" \
 	| mysql --password="$MYSQL_ROOT_PWD" ) || exit_with_error "ERROR: WHILE DESTROY USER AND DB"

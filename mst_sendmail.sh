@@ -14,7 +14,14 @@ exit_with_error(){
 	test 'x' != "x$1" && echo "$1"
 	exit 1
 }
-MTA='/usr/sbin/ssmtp'
+if [ "$( uname )" = 'FreeBSD' ]; then
+	MTA='/usr/local/sbin/ssmtp'
+	MD5='md5'
+elif [ "$( uname )" = 'Linux' ]; then
+	MTA='/usr/sbin/ssmtp'
+	MD5='md5sum'
+fi
+
 mst_sendmail(){
 	# $1 sender
 	# $2 target
@@ -31,7 +38,7 @@ mst_sendmail(){
 	SUBJECT="$3"
 	FILE_CONTENT="$4"
 	ATTACH_FILE_LIST="$5"
-	TIMEMARK="$(echo "$(date "+%Y%m%d%H%M%S%N")" | md5sum | sed -e 's/\s*-$//' )"
+	TIMEMARK="$(echo "$(date "+%Y%m%d%H%M%S%N")" | $MD5 | sed -e 's/\s*-$//' )"
 	test -e "$SUBJECT" && SUBJECT="$( cat "$SUBJECT" )"
 	FILE_TIMEMARK="/tmp/MAILBODY-$TIMEMARK.tmp"
 	touch "$FILE_TIMEMARK"
@@ -62,7 +69,11 @@ mst_sendmail(){
 		mta_RETURN=$?
 	else
 		# single file send
-		echo "FROM: $SENDER\nTO: $TARGET\nSUBJECT: $SUBJECT\n\n" > "$FILE_TIMEMARK"
+		echo "FROM: $SENDER" > "$FILE_TIMEMARK"
+		echo "TO: $TARGET" >> "$FILE_TIMEMARK"
+		echo "SUBJECT: $SUBJECT" >> "$FILE_TIMEMARK"
+		echo "" >> "$FILE_TIMEMARK"
+		echo "" >> "$FILE_TIMEMARK"
 		if [ -e "$FILE_CONTENT" ]; then
 			cat $FILE_CONTENT >> "$FILE_TIMEMARK"
 		else

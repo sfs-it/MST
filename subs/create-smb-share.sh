@@ -16,6 +16,7 @@ SETTINGS_FILE="/etc/SFSit_MST.conf.sh"
 test -s "~/SFSit_MST.conf.sh" && SETTINGS_FILE="~/SFSit_MST.conf.sh"
 if [ -s "$SETTINGS_FILE" ]; then
 	VHOSTS_DIR="$(sh "$SETTINGS_FILE" VHOSTS_DIR)"
+	WWW_GROUP="$(sh "$SETTINGS_FILE" WWW_GROUP)"
 fi
 PWD_SRC="$(pwd)"
 cd $(dirname $0) 
@@ -28,13 +29,12 @@ exit_with_error(){
 [ "x$1" = 'x' ] && exit_with_error "$SYNTAX : VHOST needed"
 if [ "$( uname )" = 'FreeBSD' ]; then
         SAMBA_CONF_FILE='/usr/local/etc/smb4.conf'
-        SAMBA_VHOSTS_CONF_FILE='/usr/local/etc/smb4.vhosts.conf'
         SAMBA_CONF_DIR='/usr/local/etc/smb4.conf.d'
 elif [ "$( uname )" = 'Linux' ]; then
-        SAMBA_CONF_FILE='/etc/sama/smb.conf'
-        SAMBA_VHOSTS_CONF_FILE='/etc/samba/smb.vhosts.conf'
+        SAMBA_CONF_FILE='/etc/samba/smb.conf'
         SAMBA_CONF_DIR='/etc/samba/smb.conf.d'
 fi
+SAMBA_VHOSTS_CONF_FILE="$SAMBA_CONF_DIR/vhosts.smb.conf"
 
 
 VHOST=$1
@@ -46,8 +46,9 @@ cat "../templates/vhost.smb.conf.tpl" \
 	| sed -E "s#\\{\\\$VHOSTS_DIR\\}#$VHOSTS_DIR#g" \
 	| sed -E "s#\\{\\\$VHOST\\}#$VHOST#g" \
 	| sed -E "s#\\{\\\$USER\\}#$USER#g" \
+	| sed -E "s#\\{\\\$USER\\}#$WWW_GROUP#g" \
 	> "$SAMBA_CONF_DIR/$VHOST.smb.conf" || exit_with_error "ERROR: saving '$VHOST.smb.conf'"
-echo "include = \"$SAMBA_CONF_DIR/$VHOST.smb.conf\"" >> $SAMBA_VHOSTS_CONF_FILE  || exit_with_error "ERROR: updating '$( basename $SAMBA_VHOSTS_CONF_FILE )'"
+echo "include = $SAMBA_CONF_DIR/$VHOST.smb.conf" >> $SAMBA_VHOSTS_CONF_FILE  || exit_with_error "ERROR: updating '$( basename $SAMBA_VHOSTS_CONF_FILE )'"
 if [ "$( uname )" = 'FreeBSD' ]; then
 	service samba_server restart || exit_with_error "ERROR: restating smb"
 elif [ "$( uname )" = 'Linux' ]; then

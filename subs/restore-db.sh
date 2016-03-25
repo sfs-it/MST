@@ -32,8 +32,8 @@ cd $(dirname $0)
 VHOST=$1
 VHOST_ACCOUNTFILE="$VHOSTS_DIR/$VHOST/account.txt";
 [ -s "$VHOST_ACCOUNTFILE" ] || exit_with_error "ERROR: CANNOT LOAD 'account.txt' FOR $VHOST"
-USER="`cat $VHOST_ACCOUNTFILE | grep 'USER:' | sed 's/^USER:\s*//'`"
-PWD_MYSQL="$(cat $VHOST_ACCOUNTFILE | grep 'PWD_MYSQL:' | sed 's/^PWD_MYSQL:\s*//')"
+USER="$(cat $VHOST_ACCOUNTFILE | grep 'USER:' | sed 's/^USER:\s*//' | sed 's/^PWD_MYSQL:\s*//' | sed 's/^[[:blank:]]*//g')"
+PWD_MYSQL="$(cat $VHOST_ACCOUNTFILE | grep 'PWD_MYSQL:' | sed 's/^PWD_MYSQL:\s*//' | sed 's/^[[:blank:]]*//g')"
 ( cat $SQL_DUMP \
 	| mysql --user "$USER" --password="$PWD_MYSQL" "$USER" ) || exit_with_error "ERROR: RESTORING DB"
 cd "$PWD_SRC"

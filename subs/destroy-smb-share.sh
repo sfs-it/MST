@@ -27,16 +27,29 @@ exit_with_error(){
 }
 
 [ "x$1" = 'x' ] && exit_with_error "$SYNTAX : VHOST needed"
+if [ "$( uname )" = 'FreeBSD' ]; then
+        SAMBA_CONF_DIR='/usr/local/etc/smb4.conf.d'
+elif [ "$( uname )" = 'Linux' ]; then
+        SAMBA_CONF_DIR='/etc/samba/smb.conf.d'
+fi
+SAMBA_VHOSTS_CONF_FILE="$SAMBA_CONF_DIR/vhosts.smb.conf"
+
 
 VHOST=$1
 VHOST_ACCOUNTFILE="$VHOSTS_DIR/$VHOST/account.txt";
 [ -s "$VHOST_ACCOUNTFILE" ] || exit_with_error "ERROR: CANNOT LOAD 'account.txt' FOR $VHOST"
+USER="$(cat "$VHOST_ACCOUNTFILE" | grep 'USER:' | sed 's/^USER:\s*//' | sed 's/^[[:blank:]]*//g')"
+
 
 rm -f "/etc/samba/smb.conf.d/$VHOST.smb.conf"
-cat /etc/samba/smb.conf.vhosts | sed -E "s;include = /etc/samba/smb.conf.d/$VHOST.smb.conf;;" | sed -E '/^$/d' >> /etc/samba/smb.conf.vhosts.tmp
-mv -f /etc/samba/smb.conf.vhosts.tmp /etc/samba/smb.conf.vhosts
+cat $SAMBA_VHOSTS_CONF_FILE | sed -E "s;include = $SAMBA_CONF_DIR/$VHOST.smb.conf;;" | sed -E '/^$/d' >> $SAMBA_VHOSTS_CONF_FILE.tmp
+mv -f $SAMBA_VHOSTS_CONF_FILE.tmp $SAMBA_VHOSTS_CONF_FILE
 
-service smbd restart
+if [ "$( uname )" = 'FreeBSD' ]; then
+        service samba_server restart || exit_with_error "ERROR: restating smb"
+elif [ "$( uname )" = 'Linux' ]; then
+        service smbd restart || exit_with_error "ERROR: restating smb"
+fi
 
 cd "$PWD_SRC"
 exit 0

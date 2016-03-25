@@ -35,12 +35,12 @@ exit_with_error(){
 VHOST=$1
 VHOST_ACCOUNTFILE="$VHOSTS_DIR/$VHOST/account.txt";
 [ -s "$VHOST_ACCOUNTFILE" ] || exit_with_error "ERROR: CANNOT LOAD 'account.txt' FOR $VHOST"
-USER=$(cat $VHOST_ACCOUNTFILE | grep 'USER:' | sed 's/^USER:\s*//')
-UID="$(id -u $USER)"
-DOMAIN=$(cat $VHOST_ACCOUNTFILE | grep 'DOMAIN:' | sed 's/^DOMAIN:\s*//')
-VHOST_EMAIL="$( cat "$VHOST_ACCOUNTFILE" | grep 'VHOST_EMAIL:' | sed 's/^VHOST_EMAIL:\s*//' )"
+USER=$(cat $VHOST_ACCOUNTFILE | grep 'USER:' | sed 's/^USER:\s*//' | sed 's/^[[:blank:]]*//g')
+UID="$(id -u $USER | sed 's/^[[:blank:]]*//g')"
+DOMAIN=$(cat $VHOST_ACCOUNTFILE | grep 'DOMAIN:' | sed 's/^DOMAIN:\s*//' | sed 's/^[[:blank:]]*//g')
+VHOST_EMAIL="$( cat "$VHOST_ACCOUNTFILE" | grep 'VHOST_EMAIL:' | sed 's/^VHOST_EMAIL:\s*//' | sed 's/^[[:blank:]]*//g')"
 test "x$VHOST_EMAIL" = "x" && VHOST_EMAIL="$(sh "$SETTINGS_FILE" HOST_EMAIL)"
-ADMIN_EMAIL="$( cat "$VHOST_ACCOUNTFILE" | grep 'ADMIN_EMAIL:' | sed 's/^ADMIN_EMAIL:\s*//' )"
+ADMIN_EMAIL="$( cat "$VHOST_ACCOUNTFILE" | grep 'ADMIN_EMAIL:' | sed 's/^ADMIN_EMAIL:\s*//' | sed 's/^[[:blank:]]*//g')"
 test "x$ADMIN_EMAIL" = "x" && ADMIN_EMAIL="$(sh "$SETTINGS_FILE" ADMIN_EMAIL)"
 TIMEMARKFILE="/tmp/mailbody-$(date "+%Y%m%d%H%M%S%N").mail"
 ( cat ../templates/destroy-mail.tpl \

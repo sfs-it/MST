@@ -7,10 +7,10 @@
    writable = yes
    create mask = 0640
    directory mask = 0750
-   valid users = @www-data
-   write list = @www-data
+   valid users = @{$WWW_GROUP}
+   write list = @{$WWW_GROUP}
    force user = {$USER}
-   force group = www-data
+   force group = {$WWW_GROUP}
    vfs objects = recycle
    recycle:repository = .recycle
    recycle:keeptree = yes
