@@ -13,7 +13,7 @@ BASESCRIPT="$(basename $0)"
 SYNTAX="$BASESCRIPT VHOST USER  [PWD_FTP [PWD_MYSQL [HOST_EMAIL [ADMIN_EMAIL]]]]"
 
 SETTINGS_FILE="/etc/SFSit_MST.conf.sh"
-test -s "~/SFSit_MST.conf.sh" && SETTINGS_FILE="~/SFSit_MST.conf.sh"
+test -s "/root/SFSit_MST.conf.sh" && SETTINGS_FILE="/root/SFSit_MST.conf.sh"
 if [ -s "$SETTINGS_FILE" ]; then
 	HOSTNAME="$(sh "$SETTINGS_FILE" HOSTNAME)"
 	test "x$HOSTNAME" = "x" && HOSTNAME="$(hostname)"
@@ -30,7 +30,6 @@ if [ -s "$SETTINGS_FILE" ]; then
 	[ 'x' = "$GRIVE_DIR" ] && GRIVE_DIR="$VHOSTS_DIR/gDrive"
 	[ 'x' = "$GRIVE_SUBDIR_BACKUPS" ] && GRIVE_SUBDIR_BACKUPS='backups'
 fi
-
 PWD_SRC="$(pwd)"
 cd $(dirname $0) 
 exit_with_error(){
@@ -52,7 +51,7 @@ exit_with_error(){
 
 VHOST=$1
 USER=$2
-UID="$(id -u $USER)"
+#UID="$(id -u $USER)"
 PWD_FTP=$3
 PWD_MYSQL=$4
 DOMAIN=`echo $VHOST | sed -E 's/([^\.]*\.)*([^\.]*\.[^\.]*)$/\2/'`

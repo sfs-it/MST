@@ -13,7 +13,7 @@ SYNTAX="$0 [[rsync|rsync-only]|[[diff-backup|diff] [db-only]]] [VHOST]"
 
 PWD_SRC="$(pwd)"
 SETTINGS_FILE="/etc/SFSit_MST.conf.sh"
-test -s "~/SFSit_MST.conf.sh" && SETTINGS_FILE="~/SFSit_MST.conf.sh"
+test -s "/root/SFSit_MST.conf.sh" && SETTINGS_FILE="/root/SFSit_MST.conf.sh"
 if [ -s "$SETTINGS_FILE" ]; then
 	VHOSTS_DIR="$(sh "$SETTINGS_FILE" VHOSTS_DIR)"
 	WWW_GROUP="$(sh "$SETTINGS_FILE" WWW_GROUP)"

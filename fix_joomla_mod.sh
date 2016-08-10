@@ -1,16 +1,5 @@
 #!/bin/sh
 
-if [ "x$1" = "xDEVEL" ]; then
-    chown $CHOWN_OPTIONS -R $WWW_USER .
-    find . ! -type f -exec chmod $CHMOD_OPTIONS 770 '{}' \;
-    find . -type f -exec chmod $CHMOD_OPTIONS 660 '{}' \;
-    exit
-fi
-if [ "x$1" = "x" ]; then
-        user="`whoami`"
-else
-        user="$1"
-fi
 if [ "$( uname )" = 'FreeBSD' ]; then
 	CHMOD_OPTIONS=''
 	CHOWN_OPTIONS=''
@@ -23,6 +12,17 @@ elif [ "$( uname )" = 'Linux' ]; then
 	WWW_GROUP='$WWW_USER'
 fi
 
+if [ "x$1" = "xDEVEL" ]; then
+    chown $CHOWN_OPTIONS -R $WWW_USER .
+    find . ! -type f -exec chmod $CHMOD_OPTIONS 770 '{}' \;
+    find . -type f -exec chmod $CHMOD_OPTIONS 660 '{}' \;
+    exit
+fi
+if [ "x$1" = "x" ]; then
+        user="`whoami`"
+else
+        user="$1"
+fi
 find . ! -type f -exec chmod $CHMOD_OPTIONS 750 '{}' \;
 find . -type f -exec chmod $CHMOD_OPTIONS 640 '{}' \;
 find . -exec chown $CHOWN_OPTIONS "$user":$WWW_USER '{}' \;
@@ -65,5 +65,10 @@ if [ -d "administrator/components/com_easycreator/data/" ]; then
     chown $CHOWN_OPTIONS -R $WWW_USER administrator/components/com_easycreator/data/
     find administrator/components/com_easycreator/data/ ! -type f -exec chmod $CHMOD_OPTIONS 770 '{}' \;
     find administrator/components/com_easycreator/data/ -type f -exec chmod $CHMOD_OPTIONS 660 '{}' \;
+fi
+if [ -d "media/com_uniterevolution2" ]; then
+    chown $CHOWN_OPTIONS -R $WWW_USER media/com_uniterevolution2/assets/rs-plugin
+    find media/com_uniterevolution2/assets/rs-plugin/ ! -type f -exec chmod $CHMOD_OPTIONS 770 '{}' \;
+    find media/com_uniterevolution2/assets/rs-plugin/ -type f -exec chmod $CHMOD_OPTIONS 660 '{}' \;
 fi
 

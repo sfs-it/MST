@@ -25,7 +25,7 @@ PWD=$(pwd)
 umask 022
 
 SETTINGS_FILE="/etc/SFSit_MST.conf.sh"
-test -s "~/SFSit_MST.conf.sh" && SETTINGS_FILE="~/SFSit_MST.conf.sh"
+test -s "/root/SFSit_MST.conf.sh" && SETTINGS_FILE="/root/SFSit_MST.conf.sh"
 if [ -s "$SETTINGS_FILE" ]; then
 	HOST_EMAIL="$(sh "$SETTINGS_FILE" HOST_EMAIL)"
 	ADMIN_EMAIL="$(sh "$SETTINGS_FILE" ADMIN_EMAIL)"

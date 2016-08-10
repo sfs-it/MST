@@ -11,7 +11,7 @@ BASESCRIPT="$(basename $0)"
 SYNTAX="$BASESCRIPT VHOST USER [PWD_FTP [PWD_MYSQL [HOST_EMAIL [ADMIN_EMAIL [GRIVE_EMAIL [GRIVE_DIR [GRIVE_SUBDIR_BACKUPS]]]]]]]" 
 
 SETTINGS_FILE="/etc/SFSit_MST.conf.sh"
-test -s "~/SFSit_MST.conf.sh" && SETTINGS_FILE="~/SFSit_MST.conf.sh"
+test -s "/root/SFSit_MST.conf.sh" && SETTINGS_FILE="/root/SFSit_MST.conf.sh"
 if [ -s "$SETTINGS_FILE" ]; then
 	HOSTNAME="$(sh "$SETTINGS_FILE" HOSTNAME)"
 	test "x$HOSTNAME" = "x" && HOSTNAME="$(hostname)"
@@ -62,7 +62,7 @@ sh ./subs/create-vhost.sh "$VHOST" ||exit_with_error "ERROR: CREATING VHOST '$VH
 echo "vhost '$VHOST' created"
 sh ./subs/create-db.sh "$VHOST" || exit_with_error "ERROR: CREATING DB for user '$USER'"
 echo "db '$USER' created"
-sh ./subs/create-smb-share.sh "$VHOST" || exit_with_error "ERROR: CREATING SMB SHARE FOR $VHOST"
+[ "x$SAMBA_ENABLED" -eq "xYES" ] && ( sh ./subs/create-smb-share.sh "$VHOST" || exit_with_error "ERROR: CREATING SMB SHARE FOR $VHOST" )
 echo "smb '$VHOST' share created"
 sh ./subs/create-logrotate.sh "$VHOST" || exit_with_error "ERROR: CREATING LOG ROTATE FOR $VHOST"
 echo "logrotate '$VHOST' share created"

@@ -13,7 +13,7 @@ BASESCRIPT="$(basename $0)"
 SYNTAX="$BASESCRIPT VHOST"
 
 SETTINGS_FILE="/etc/SFSit_MST.conf.sh"
-test -s "~/SFSit_MST.conf.sh" && SETTINGS_FILE="~/SFSit_MST.conf.sh"
+test -s "/root/SFSit_MST.conf.sh" && SETTINGS_FILE="/root/SFSit_MST.conf.sh"
 if [ -s "$SETTINGS_FILE" ]; then
 	VHOSTS_DIR="$(sh "$SETTINGS_FILE" VHOSTS_DIR)"
 	WWW_GROUP="$(sh "$SETTINGS_FILE" WWW_GROUP)"
@@ -46,7 +46,7 @@ cat "../templates/vhost.smb.conf.tpl" \
 	| sed -E "s#\\{\\\$VHOSTS_DIR\\}#$VHOSTS_DIR#g" \
 	| sed -E "s#\\{\\\$VHOST\\}#$VHOST#g" \
 	| sed -E "s#\\{\\\$USER\\}#$USER#g" \
-	| sed -E "s#\\{\\\$USER\\}#$WWW_GROUP#g" \
+	| sed -E "s#\\{\\\$WWW_GROUP\\}#$WWW_GROUP#g" \
 	> "$SAMBA_CONF_DIR/$VHOST.smb.conf" || exit_with_error "ERROR: saving '$VHOST.smb.conf'"
 echo "include = $SAMBA_CONF_DIR/$VHOST.smb.conf" >> $SAMBA_VHOSTS_CONF_FILE  || exit_with_error "ERROR: updating '$( basename $SAMBA_VHOSTS_CONF_FILE )'"
 if [ "$( uname )" = 'FreeBSD' ]; then

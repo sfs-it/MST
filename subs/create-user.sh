@@ -15,7 +15,7 @@ SYNTAX="$BASESCRIPT VHOST"
 PWD_SRC="$(pwd)"
 
 SETTINGS_FILE="/etc/SFSit_MST.conf.sh"
-test -s "~/SFSit_MST.conf.sh" && SETTINGS_FILE="~/SFSit_MST.conf.sh"
+test -s "/root/SFSit_MST.conf.sh" && SETTINGS_FILE="/root/SFSit_MST.conf.sh"
 if [ -s "$SETTINGS_FILE" ]; then
 	VHOSTS_DIR="$(sh "$SETTINGS_FILE" VHOSTS_DIR)"
 	WWW_USER="$(sh "$SETTINGS_FILE" WWW_USER)"
@@ -40,9 +40,11 @@ if [ "$( uname )" = 'FreeBSD' ]; then
 	WWW_GROUP_ID=`id -g "$WWW_USER"`
 	( echo "$USER::$WWW_GROUP_ID:::::$VHOSTS_DIR/$VHOST:/usr/sbin/nologin:$FTP_PWD" | adduser -f - ) || \
 		exit_with_error "ERROR: CANNOT CREATE USER" 
+	UID=`id -u "$USER"`
 elif [ "$( uname )" = 'Linux' ]; then
 	useradd -d "$VHOSTS_DIR/$VHOST" -g "$WWW_GROUP" -M -s /bin/false "$USER" ||  exit_with_error "ERROR: CANNOT CREATE USER"
 	( echo "$USER:$FTP_PWD" | chpasswd ) || exit_with_error "ERROR: CANNOT CHANGE THE PASSWORD" 
+	UID=`id -u "$USER"`
 fi
 chown -R "$USER":"$WWW_GROUP" "$VHOSTS_DIR/$VHOST" ||  exit_with_error "ERROR: CHANGING OWNERSHIP OF '$VHOSTS_DIR/$VHOST' TO '$USER:$WWW_GROUP'" 
 

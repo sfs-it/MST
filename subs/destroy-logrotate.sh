@@ -13,7 +13,7 @@ BASESCRIPT="$(basename $0)"
 SYNTAX="$BASESCRIPT VHOST"
 
 SETTINGS_FILE="/etc/SFSit_MST.conf.sh"
-test -s "~/SFSit_MST.conf.sh" && SETTINGS_FILE="~/SFSit_MST.conf.sh"
+test -s "/root/SFSit_MST.conf.sh" && SETTINGS_FILE="/root/SFSit_MST.conf.sh"
 if [ -s "$SETTINGS_FILE" ]; then
         APACHE_VERSION="$(sh "$SETTINGS_FILE" APACHE_VERSION)"
         [ "x$APACHE_VERSION" != 'xapache22' -a "x$APACHE_VERSION" != 'xapache24' ] && APACHE_VERSION='apache22'
