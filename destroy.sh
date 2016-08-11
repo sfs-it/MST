@@ -52,7 +52,7 @@ if [ "x$BACKUP" = "xBACKUP" ]; then
 fi
 sh ./subs/destroy-vhost.sh "$VHOST" || exit_with_error
 echo "destroyed vhost '$VHOST'"
-sh ./subs/destroy-smb-share.sh "$VHOST" || exit_with_error
+[ "x$samba_enabled" = "xYES" ] && ( sh ./subs/destroy-smb-share.sh "$VHOST" || exit_with_error )
 echo "removed smb share of '$VHOST'"
 sh ./subs/destroy-db.sh "$VHOST" || exit_with_error
 echo "destroyed db '$USER'"

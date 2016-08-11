@@ -62,7 +62,7 @@ sh ./subs/create-vhost.sh "$VHOST" ||exit_with_error "ERROR: CREATING VHOST '$VH
 echo "vhost '$VHOST' created"
 sh ./subs/create-db.sh "$VHOST" || exit_with_error "ERROR: CREATING DB for user '$USER'"
 echo "db '$USER' created"
-[ "x$SAMBA_ENABLED" -eq "xYES" ] && ( sh ./subs/create-smb-share.sh "$VHOST" || exit_with_error "ERROR: CREATING SMB SHARE FOR $VHOST" )
+[ "x$SAMBA_ENABLED" = "xYES" ] && ( sh ./subs/create-smb-share.sh "$VHOST" || exit_with_error "ERROR: CREATING SMB SHARE FOR $VHOST" )
 echo "smb '$VHOST' share created"
 sh ./subs/create-logrotate.sh "$VHOST" || exit_with_error "ERROR: CREATING LOG ROTATE FOR $VHOST"
 echo "logrotate '$VHOST' share created"

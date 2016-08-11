@@ -45,7 +45,7 @@ Alias /{$USER} {$VHOSTS_DIR}/{$VHOST}/httpdocs
 Alias /{$VHOST_ONDOMAIN} {$VHOSTS_DIR}/{$VHOST}/httpdocs
 Alias /{$VHOST} {$VHOSTS_DIR}/{$VHOST}/httpdocs
 
-<Directory /home/vhosts/www.sfs.it/httpdocs>
+<Directory {$VHOSTS_DIR}/{$VHOST}/httpdocs>
 	AllowOverride FileInfo AuthConfig Limit Indexes
 	Options MultiViews Indexes SymLinksIfOwnerMatch IncludesNoExec FollowSymLinks
 	AllowOverrideList Redirect RedirectMatch

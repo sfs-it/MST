@@ -32,8 +32,10 @@ exit_with_error(){
 
 if [ "$( uname )" = 'FreeBSD' ]; then
 	LOGROTATE_DIR='/usr/local/etc/logrotate.d'
+	LOGROTATE_TEMPLATE="../templates/freebsd-logrotate-$APACHE_VERSION-vhost.tpl"
 elif [ "$( uname )" = 'Linux' ]; then
 	LOGROTATE_DIR='/etc/logrotate.d'
+	LOGROTATE_TEMPLATE="../templates/linux-logrotate-$APACHE_VERSION-vhost.tpl"
 fi
 
 
@@ -42,7 +44,7 @@ VHOST_ACCOUNTFILE="$VHOSTS_DIR/$VHOST/account.txt";
 [ -s "$VHOST_ACCOUNTFILE" ] || exit_with_error "ERROR: CANNOT LOAD 'account.txt' FOR $VHOST"
 USER="$(cat "$VHOST_ACCOUNTFILE" | grep 'USER:' | sed 's/^USER:\s*//' | sed 's/^[[:blank:]]*//g')"
 
-( cat "../templates/logrotate-apache2-vhost.tpl" \
+( cat "$LOGROTATE_TEMPLATE" \
 	| sed -E "s#\\{\\\$VHOSTS_DIR\\}#$VHOSTS_DIR#g" \
 	| sed -E "s#\\{\\\$VHOST\\}#$VHOST#g" \
     | sed -E "s#\\{\\\$USER\\}#$USER#g" \
