@@ -3,10 +3,8 @@
 # ######################### #
 
 <VirtualHost *:80>
-	ServerName   {$VHOST}
-	ServerAlias  {$DOMAIN}
-#	ServerAlias  {$VHOST_ONDOMAIN}.{$MY_DOMAIN}
-
+	ServerName  {$VHOST}
+{$SERVER_ALIASES}
 	ServerAdmin  {$ADMIN_EMAIL}
 
 	DocumentRoot {$VHOSTS_DIR}/{$VHOST}/{$HTTPDOCS_DIR}

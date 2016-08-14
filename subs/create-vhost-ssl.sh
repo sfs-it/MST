@@ -71,11 +71,11 @@ while [ "x$2" != "x" ]; do
 	fi
 	shift
 done
-certbot certonly --webroot -w "$VHOSTS_DIR/$VHOST/$HTTPDOCS_DIR" $CERTBOT_PARAMS
+certbot certonly --webroot -w "$VHOSTS_DIR/$VHOST/$HTTPDOCS_DIR" $CERTBOT_PARAMS || exit_with_error "ERROR: creating CERTIFICATES FOR '$VHOST'"
 SERVER_ALIASES=$(printf "$SERVER_ALIASES" | tr '\n' '\r')
 if [ "$( uname )" = 'FreeBSD' ]; then
 	VHOST_CONFIG_DIR="/usr/local/etc/$APACHE_VERSION/Vhosts"
-	( cat "../templates/$APACHE_VERSION.vhost-ssl.conf.tpl" \
+	( cat "../templates/$APACHE_VERSION.vhost:ssl.conf.tpl" \
 		| sed -E "s#\\{\\\$VHOST\\}#$VHOST#g" \
 		| sed -E "s#\\{\\\$DOMAIN\\}#$DOMAIN#g" \
 		| sed -E "s#\\{\\\$MY_DOMAIN\\}#$MY_DOMAIN#g" \
@@ -88,12 +88,12 @@ if [ "$( uname )" = 'FreeBSD' ]; then
 		| sed -E "s#\\{\\\$VHOST_ONDOMAIN\\}#$VHOST_ONDOMAIN#g" \
 		| sed -E "s#\\{\\\$SERVER_ALIASES\\}#$SERVER_ALIASES#g" \
 		| tr '\r' '\n' \
-		>> "$VHOST_CONFIG_DIR/$VHOST.conf" )  || exit_with_error "ERROR: appending https section on '$VHOST_CONFIG_DIR/$VHOST.conf'"
+		> "$VHOST_CONFIG_DIR/$VHOST:ssl.conf" )  || exit_with_error "ERROR: creating '$VHOST_CONFIG_DIR/$VHOST:ssl.conf'"
 	service $APACHE_VERSION restart || exit_with_error "ERROR: restating $APACHE_VERSION"
 elif [ "$( uname )" = 'Linux' ]; then
 	VHOST_CONFIG_DIR='/etc/apache2/sites-available'
 	VHOST_CONFIG_ENABLED_DIR='/etc/apache2/sites-enabled'
-	( cat "../templates/$APACHE_VERSION.vhost-ssl.conf.tpl" \
+	( cat "../templates/$APACHE_VERSION.vhost:ssl.conf.tpl" \
 		| sed -E "s#\\{\\\$VHOST\\}#$VHOST#g" \
 		| sed -E "s#\\{\\\$DOMAIN\\}#$DOMAIN#g" \
 		| sed -E "s#\\{\\\$MY_DOMAIN\\}#$MY_DOMAIN#g" \
@@ -106,7 +106,9 @@ elif [ "$( uname )" = 'Linux' ]; then
 		| sed -E "s#\\{\\\$VHOST_ONDOMAIN\\}#$VHOST_ONDOMAIN#g" \
 		| sed -E "s#\\{\\\$SERVER_ALIASES\\}#$SERVER_ALIASES#g" \
 		| tr '\r' '\n' \
-		>> "$VHOST_CONFIG_DIR/$VHOST" )  || exit_with_error "ERROR: appending https section on '$VHOST_CONFIG_DIR/$VHOST.conf'"
+		> "$VHOST_CONFIG_DIR/$VHOST:ssl" )  || exit_with_error "ERROR: creating '$VHOST_CONFIG_DIR/$VHOST:ssl.conf'"
+	ln -fs "$VHOST_CONFIG_DIR/$VHOST:ssl.conf" "$VHOST_CONFIG_ENABLED_DIR/$VHOST:ssl.conf" || \
+                exit_with_error "ERROR: linking '$VHOST_CONFIG_DIR/$VHOST:ssl.conf' to '$VHOST_CONFIG_ENABLED_DIR/$VHOST:ssl.conf'"
 	service apache2 restart || exit_with_error "ERROR: restating apache2"
 fi
 ( printf "\nVHOST SSL: $VHOSTs_SSL" \

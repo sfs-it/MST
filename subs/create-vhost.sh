@@ -84,7 +84,7 @@ if [ "$( uname )" = 'FreeBSD' ]; then
 		| sed -E "s#\\{\\\$SERVER_ALIASES\\}#$SERVER_ALIASES#g" \
 		| tr '\r' '\n' \
 		> "$VHOST_CONFIG_DIR/$VHOST.conf" )  || exit_with_error "ERROR: creating '$VHOST_CONFIG_DIR/$VHOST.conf'"
-	# service $APACHE_VERSION restart || exit_with_error "ERROR: restating $APACHE_VERSION"
+	service $APACHE_VERSION restart || exit_with_error "ERROR: restating $APACHE_VERSION"
 elif [ "$( uname )" = 'Linux' ]; then
 	VHOST_CONFIG_DIR='/etc/apache2/sites-available'
 	VHOST_CONFIG_ENABLED_DIR='/etc/apache2/sites-enabled'
