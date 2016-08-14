@@ -6,11 +6,21 @@ HOSTNAME='yourhost.fqdn.local'		# YOUR FQDN hostname
 VHOSTS_DIR='/home/vhosts'		# WHERE VHOST ARE STORED
 HTTPDOCS_DIR='httpdocs'			# VHOST httpdocs directory
 HTTPLOGS_DIR='logs'			# VHOST httplogs directory
-WWW_USER='www-data'			# www-user (on ubuntu www-data on apache2)
-WWW_GROUP='www-data'			# www-group (on ubuntu www-data on apache2)
+WWW_USER='www-data'			# www (on freebsd)
+					# www-user (on ubuntu www-data on apache2)
+WWW_GROUP='www'				# www (on freebsd)
+					# www-group (on ubuntu www-data on apache2)
+# ENABLE OR DISABLE SINGLE PARTS
+HTTPS_ENABLES='YES'			# ENABLE HTTP CONFIG GENERATION FOR VHOSTS
+SAMBA_ENABLES='YES'			# ENABLE SAMBA SHARING FOR HOST
+# MYSQL
+MYSQL_ENABLES='YES'			# ENABLE MYSQL DATABASE CREATION FOR NEW HOSTS
+MYSQL_ROOT_PWD='ROOTPWD'		# MySQL root password
+# LOGROTATE
+LOGROTATE_ENABLED='YES'			# ENABLE LOGROTATE FOR VHOST LOGS
+#BACKUP SETTINGS
 APACHE_CONF='SAVE'			# SAVE APACHE CONFIGURATION ON CREATE VHOST
 SAMBA_CONF='SAVE'			# SAVE SAMBA CONFIGURATION ON CREATE VHOST
-MYSQL_ROOT_PWD='ROOTPWD'		# MySQL root password
 
 # MAILNG SETTINGS
 ADMIN_EMAIL='admin@email.QDN'		# Default email who send email
@@ -29,7 +39,7 @@ LORG_DIR='/usr/share/php/lorg'		# lorg installation directory
 					#	cd /usr/share/php/ 
 					#	git clone https://github.com/jensvoid/lorg
 LORG_OPT=' -i combined -o html -d phpids -d chars  -a all -c all -b all -t 10 -v 2 -h -g -p'
-		# ' -i combined -o html -d phpids -d chars -d dnsbl -a all -c all -b all -t 10 -v 2 -h -g -p'
+	#' -i combined -o html -d phpids -d chars -d dnsbl -a all -c all -b all -t 10 -v 2 -h -g -p'
 LORG_SAVE_REPORT_ON_HTTPDOC_SLOGS="false"
 LORG_SPLITTED="false"
 LORG_ATTACH_REPORT="false"

@@ -71,7 +71,10 @@ while [ "x$2" != "x" ]; do
 	fi
 	shift
 done
+echo 'CREATE SSL CERTIFICATES'
 certbot certonly --webroot -w "$VHOSTS_DIR/$VHOST/$HTTPDOCS_DIR" $CERTBOT_PARAMS || exit_with_error "ERROR: creating CERTIFICATES FOR '$VHOST'"
+
+echo 'CREATE VHOST HTTP CONFIGURATION'
 SERVER_ALIASES=$(printf "$SERVER_ALIASES" | tr '\n' '\r')
 if [ "$( uname )" = 'FreeBSD' ]; then
 	VHOST_CONFIG_DIR="/usr/local/etc/$APACHE_VERSION/Vhosts"
@@ -111,7 +114,9 @@ elif [ "$( uname )" = 'Linux' ]; then
                 exit_with_error "ERROR: linking '$VHOST_CONFIG_DIR/$VHOST:ssl.conf' to '$VHOST_CONFIG_ENABLED_DIR/$VHOST:ssl.conf'"
 	service apache2 restart || exit_with_error "ERROR: restating apache2"
 fi
-( printf "\nVHOST SSL: $VHOSTs_SSL" \
->> $VHOST_ACCOUNTFILE ) || exit_with_error "ERROR: appending VHOST SSL: on '$VHOST_ACCOUNTFILE'"
+echo 'UPDATE account.txt for VHOST HTTPs (SSL)'
+( printf "\n\nhttps Vhost:\n\tServerName: $VHOST\n$SERVER_ALIASES" \
+        |  tr '\r' '\n' \
+        >> $VHOST_ACCOUNTFILE ) || exit_with_error "ERROR: updating VHOST HTTPs (SSL) info '$VHOST_ACCOUNTFILE'"
 cd "$PWD_SRC"
 exit 0

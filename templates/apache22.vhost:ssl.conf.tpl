@@ -2,7 +2,7 @@
 # VIRTUALHOST SSL FOR {$DOMAIN}
 # ######################### #
 
-<VirtualHost *:80>
+<VirtualHost *:443>
 	ServerName   {$VHOST}
 {$SERVER_ALIASES}
 	ServerAdmin  {$ADMIN_EMAIL}

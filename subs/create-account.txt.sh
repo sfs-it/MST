@@ -23,12 +23,6 @@ if [ -s "$SETTINGS_FILE" ]; then
 	MY_DOMAIN="$(sh "$SETTINGS_FILE" MY_DOMAIN)"
 	WWW_GROUP="$(sh "$SETTINGS_FILE" WWW_GROUP)"
 	WWW_GID="$(id -g $WWW_GROUP)"
-	GRIVE_EMAIL="$(sh "$SETTINGS_FILE" GRIVE_EMAIL)"
-	GRIVE_DIR="$(sh "$SETTINGS_FILE" GRIVE_DIR)"
-	GRIVE_SUBDIR_BACKUPS="$(sh "$SETTINGS_FILE" GRIVE_SUBDIR_BACKUPS | sed -E 's;^(/*)(.*[^/])*(/*)$;\2;g')"
-	[ 'x' = "$GRIVE_EMAIL" ] && GRIVE_EMAIL="$ADMIN_EMAIL"
-	[ 'x' = "$GRIVE_DIR" ] && GRIVE_DIR="$VHOSTS_DIR/gDrive"
-	[ 'x' = "$GRIVE_SUBDIR_BACKUPS" ] && GRIVE_SUBDIR_BACKUPS='backups'
 fi
 PWD_SRC="$(pwd)"
 cd $(dirname $0) 
@@ -42,11 +36,6 @@ exit_with_error(){
 [ "x$2" = 'x' ] && exit_with_error "$SYNTAX: USER NEEDED"
 [ "x$3" = 'x' ] && PWD_FTP=$(./subs/pwd_generator.pl 8)
 [ "x$4" = 'x' ] && PWD_MYSQL=$(./subs/pwd_generator.pl 16)
-[ "x$5" != 'x' ] && HOST_EMAIL="$5"
-[ "x$6" != 'x' ] && ADMIN_EMAIL="$6"
-[ "x$7" != 'x' ] && GRIVE_EMAIL="$7"
-[ "x$8" != 'x' ] && GRIVE_DIR="$8"
-[ "x$9" != 'x' ] && GRIVE_SUBDIR_BACKUPS="$9"
 
 
 VHOST=$1
@@ -73,9 +62,6 @@ fi
     | sed -E "s/\\{\\\$PWD_MYSQL\\}/$(echo $PWD_MYSQL | sed -E 's;&;\\&;g')/g" \
     | sed -E "s/\\{\\\$VHOST_EMAIL\\}/$HOST_EMAIL/g" \
     | sed -E "s/\\{\\\$ADMIN_EMAIL\\}/$ADMIN_EMAIL/g" \
-    | sed -E "s/\\{\\\$GRIVE_EMAIL\\}/$GRIVE_EMAIL/g" \
-    | sed -E "s;\\{\\\$GRIVE_DIR\\};$GRIVE_DIR;g" \
-    | sed -E "s;\\{\\\$GRIVE_SUBDIR_BACKUPS\\};$GRIVE_SUBDIR_BACKUPS;g" \
     > "$VHOSTS_DIR/$VHOST/account.txt" ) || exit_with_error "ERROR CREATING account.txt FOR VHOST: '$VHOST'"
 chmod 600 "$VHOSTS_DIR/$VHOST/account.txt"
 #NOT YET CREATED

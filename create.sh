@@ -19,10 +19,14 @@ if [ -s "$SETTINGS_FILE" ]; then
 	VHOSTS_DIR="$(sh "$SETTINGS_FILE" VHOSTS_DIR)"
 	HOST_EMAIL="$(sh "$SETTINGS_FILE" ADMIN_EMAIL)"
 	ADMIN_EMAIL="$(sh "$SETTINGS_FILE" ADMIN_EMAIL)"
+	GRIVE_ENABLED="$(sh "$SETTINGS_FILE" GRIVE_ENABLED | tr '[:lower:]' '[:upper:])"
 	GRIVE_EMAIL="$(sh "$SETTINGS_FILE" GRIVE_EMAIL)"
 	GRIVE_DIR="$(sh "$SETTINGS_FILE" GRIVE_DIR)"
-	SAMBA_ENABLED="$(sh "$SETTINGS_FILE" SAMBA_ENABLED)"
 	GRIVE_SUBDIR_BACKUPS="$(sh "$SETTINGS_FILE" GRIVE_SUBDIR_BACKUPS | sed -E 's;^(/*)(.*[^/])*(/*)$;\2;g')"
+	HTTPS_ENABLED="$(sh "$SETTINGS_FILE" HTTPS_ENABLED | tr '[:lower:]' '[:upper:])"
+	SAMBA_ENABLED="$(sh "$SETTINGS_FILE" SAMBA_ENABLED | tr '[:lower:]' '[:upper:])"
+	MYSQL_ENABLED="$(sh "$SETTINGS_FILE" MYSQL_ENABLED | tr '[:lower:]' '[:upper:])"
+	LOGROTATE_ENABLED="$(sh "$SETTINGS_FILE" LOGROTATE_ENABLED | tr '[:lower:]' '[:upper:])"
 	[ 'x' = "$GRIVE_EMAIL" ] && GRIVE_EMAIL="$ADMIN_EMAIL"
 	[ 'x' = "$GRIVE_DIR" ] && GRIVE_DIR="$VHOSTS_DIR/gDrive"
 	[ 'x' = "$GRIVE_SUBDIR_BACKUPS" ] && GRIVE_SUBDIR_BACKUPS='backups'
@@ -73,24 +77,35 @@ DOMAIN="$(echo "$VHOST" | sed -E 's/([^\.]*\.)*([^\.]*\.[^\.]*)$/\2/')"
 
 VHOST_SFS="$(echo "$VHOST" | sed -E 's/(\.[^\.]*)$//')"
 echo "CREATE account.txt file"
-sh ./subs/create-account.txt.sh "$VHOST" "$USER" "$PWD_FTP" "$PWD_MYSQL" "$HOST_EMAIL" "$ADMIN_EMAIL" "$GRIVE_EMAIL" "$GRIVE_DIR" "$GRIVE_SUBDIR_BACKUPS" || exit_with_error  "ERROR: CREATING REPORT account.txt"
+sh ./subs/create-account.txt.sh "$VHOST" "$USER" "$PWD_FTP" "$PWD_MYSQL" "$HOST_EMAIL" "$ADMIN_EMAIL" || exit_with_error  "ERROR: CREATING account.txt"
 echo "report 'account.txt' file created"
 echo "CREATE '$USER' account"
 sh ./subs/create-user.sh "$VHOST" || exit_with_error "ERROR: CREATING USER '$USER'"
 echo "user '$USER' created"
 echo "CREATE $VHOST in $VHOSTS_DIR of $HOSTNAME for $USER with ftp password '$PWD_FTP' and mysql password: '$PWD_MYSQL'"
 sh ./subs/create-vhost.sh "$VHOST" $VHOST_ALIASES ||exit_with_error "ERROR: CREATING VHOST '$VHOST'"
-sh ./subs/create-vhost-ssl.sh "$VHOST" $VHOST_ALIASES ||exit_with_error "ERROR: CREATING VHOST SSL '$VHOST'"
+if [ "x$HTTPS_ENABLES" = "xYES" ]; then
+    sh ./subs/create-vhost-ssl.sh "$VHOST" $VHOST_ALIASES ||exit_with_error "ERROR: CREATING VHOST SSL '$VHOST'"
+fi
 echo "vhost '$VHOST' created"
-sh ./subs/create-db.sh "$VHOST" || exit_with_error "ERROR: CREATING DB for user '$USER'"
-echo "db '$USER' created"
+if [ "x$MYSQL_ENABLED" = "xYES" ]; then
+	echo "CREATE $VHOST DATABASE (named $USER)"
+	sh ./subs/create-db.sh "$VHOST" || exit_with_error "ERROR: CREATING DB for user '$USER'"
+	echo "db '$USER' created"
+fi
+if [ "x$GRIVE_ENABLED" = "xYES" ]; then
+	echo "ADD GRIVE PARAMETERS TO account.txt"
+	sh ./subs/grive-account.txt.sh "$VHOST" "$GRIVE_EMAIL" "$GRIVE_DIR" "$GRIVE_SUBDIR_BACKUPS" || exit_with_error "ERROR: UPDATING account.txt FOR GRIVE PARAMETERS"
+fi
 if [ "x$SAMBA_ENABLED" = "xYES" ]; then
 	sh ./subs/create-smb-share.sh "$VHOST" || exit_with_error "ERROR: CREATING SMB SHARE FOR $VHOST"
 	echo "smb '$VHOST' share created"
 fi
-echo "CREATE logrotate for '$VHOST'"
-sh ./subs/create-logrotate.sh "$VHOST" || exit_with_error "ERROR: CREATING LOG ROTATE FOR $VHOST"
-echo "logrotate '$VHOST' share created"
+if [ "x$LOGROTATE_ENABLED" = "xYES" ]; then
+	echo "CREATE logrotate for '$VHOST'"
+	sh ./subs/create-logrotate.sh "$VHOST" || exit_with_error "ERROR: CREATING LOG ROTATE FOR $VHOST"
+	echo "logrotate '$VHOST' entry created"
+fi
 echo "SEND email to $ADMIN_EMAIL"
 sh ./subs/create-sendmail.sh "$VHOST" || exit_with_error  "ERROR: SENDING REPORT"
 echo "email to $ADMIN_EMAIL sent"

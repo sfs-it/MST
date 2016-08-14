@@ -64,10 +64,13 @@ while [ "x$2" != "x" ]; do
         fi
         shift
 done
-SERVER_ALIASES=$(printf "$SERVER_ALIASES" | tr '\n' '\r')
 
+echo 'Copy standard vhost data to VHOST path'
 cp -rp ../templates/empty-vhost.dir/* "$VHOSTS_DIR/$VHOST/" || exit_with_error "ERROR: coping standard empty vhost to '$VHOSTS_DIR/$VHOST'"
 chown -R "$USER":"$WWW_GROUP" "$VHOSTS_DIR/$VHOST" || exit_with_error "ERROR: coping changing ownership of '$VHOSTS_DIR/$VHOST'"
+
+echo 'CREATE VHOST HTTP CONFIGURATION'
+SERVER_ALIASES=$(printf "$SERVER_ALIASES" | tr '\n' '\r')
 if [ "$( uname )" = 'FreeBSD' ]; then
 	VHOST_CONFIG_DIR="/usr/local/etc/$APACHE_VERSION/Vhosts"
 	( cat "../templates/$APACHE_VERSION.vhost.conf.tpl" \
@@ -106,5 +109,10 @@ elif [ "$( uname )" = 'Linux' ]; then
 		exit_with_error "ERROR: linking '$VHOST_CONFIG_DIR/$VHOST.conf' to '$VHOST_CONFIG_ENABLED_DIR/$VHOST.conf'"
 	service apache2 restart || exit_with_error "ERROR: restating apache2"
 fi
+echo 'UPDATE account.txt'
+( printf "\n\nHTTP VHOST:\n\tServerName: $VHOST\n$SERVER_ALIASES" \
+	|  tr '\r' '\n' \
+	>> $VHOST_ACCOUNTFILE ) || exit_with_error "ERROR: updating VHOST http '$VHOST_ACCOUNTFILE'"
+
 cd "$PWD_SRC"
 exit 0
