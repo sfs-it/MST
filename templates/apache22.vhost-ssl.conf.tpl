@@ -1,11 +1,10 @@
 # ######################### #
-# VIRTUALHOST FOR {$DOMAIN}
+# VIRTUALHOST SSL FOR {$DOMAIN}
 # ######################### #
 
 <VirtualHost *:80>
 	ServerName   {$VHOST}
-	ServerAlias  {$DOMAIN}
-#	ServerAlias  {$VHOST_ONDOMAIN}.{$MY_DOMAIN}
+{$SERVER_ALIASES}
 
 	ServerAdmin  {$ADMIN_EMAIL}
 
@@ -33,24 +32,17 @@
 	# Possible values include: debug, info, notice, warn, error, crit, alert, emerg.
 	LogLevel warn
 	CustomLog {$VHOSTS_DIR}/{$VHOST}/{$HTTPLOGS_DIR}/access.log combined
+	SSLEngine on
+	SSLCertificateFile    /usr/local/etc/letsencrypt/archive/{$VHOST}/cert.pem
+	SSLCertificateKeyFile /usr/local/etc/letsencrypt/archive/{$VHOST}/privkey.pem
+	SSLCertificateChainFile /usr/local/etc/letsencrypt/archive/{VHOST}/fullchain.pem
+	
+	<FilesMatch "\.(cgi|shtml|phtml|php)$">
+	   SSLOptions +StdEnvVars
+	</FilesMatch>
+	
+	BrowserMatch "MSIE [2-6]" \
+	nokeepalive ssl-unclean-shutdown \
+	downgrade-1.0 force-response-1.0
+	BrowserMatch "MSIE [17-9]" ssl-unclean-shutdown
 </VirtualHost>
-
-# ################################################################################## #
-# Alias for http://{$HOSTNAME}/{$USER}
-#           http://{$HOSTNAME}/{$VHOST} 
-#           http://{$HOSTNAME}/{$DOMAIN} 
-#           http://{$HOSTNAME}/{$VHOST_ONDOMAIN} 
-# ################################################################################## #
-
-Alias /{$USER} {$VHOSTS_DIR}/{$VHOST}/{$HTTPDOCS_DIR}
-Alias /{$VHOST} {$VHOSTS_DIR}/{$VHOST}/{$HTTPDOCS_DIR}
-alias /{$VHOST_ONDOMAIN} {$VHOSTS_DIR}/{$VHOST}/{$HTTPDOCS_DIR}
-#Alias /{$DOMAIN} {$VHOSTS_DIR}/{$VHOST}/{$HTTPDOCS_DIR}
-
-<Directory {$VHOSTS_DIR}/{$VHOST}/{$HTTPDOCS_DIR}>
-	Options Indexes FollowSymLinks MultiViews
-	AllowOverride All
-	Order allow,deny
-	allow from all
-</Directory>
-

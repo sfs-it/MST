@@ -38,11 +38,11 @@ FTP_PWD="` cat $VHOST_ACCOUNTFILE | grep 'PWD_FTP:' | sed 's/^PWD_FTP:\s*//' | s
 test -d "$VHOSTS_DIR/$VHOST" || mkdir -p "$VHOSTS_DIR/$VHOST"
 if [ "$( uname )" = 'FreeBSD' ]; then
 	WWW_GROUP_ID=`id -g "$WWW_USER"`
-	( echo "$USER::$WWW_GROUP_ID:::::$VHOSTS_DIR/$VHOST:/usr/sbin/nologin:$FTP_PWD" | adduser -f - ) || \
+	( echo "$USER::$WWW_GROUP_ID:::::$VHOSTS_DIR/$VHOST:/usr/sbin/ftp-only:$FTP_PWD" | adduser -f - ) || \
 		exit_with_error "ERROR: CANNOT CREATE USER" 
 	UID=`id -u "$USER"`
 elif [ "$( uname )" = 'Linux' ]; then
-	useradd -d "$VHOSTS_DIR/$VHOST" -g "$WWW_GROUP" -M -s /bin/false "$USER" ||  exit_with_error "ERROR: CANNOT CREATE USER"
+	useradd -d "$VHOSTS_DIR/$VHOST" -g "$WWW_GROUP" -M -s /usr/sbin/ftp-only "$USER" ||  exit_with_error "ERROR: CANNOT CREATE USER"
 	( echo "$USER:$FTP_PWD" | chpasswd ) || exit_with_error "ERROR: CANNOT CHANGE THE PASSWORD" 
 	UID=`id -u "$USER"`
 fi

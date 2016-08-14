@@ -7,9 +7,9 @@
 # Written by Agostino Zanutto (agostino@sfs.it) for SFS.it MST
 #
 
-#SYNTAX: backup.sh [[rsync|rsync-only]|[[diff-backup|diff] [db-only]]] [VHOST]
+#SYNTAX: backup.sh [[rsync|rsync-only]|[[diff-backup|diff] [db-only]]] [VHOST] [PATH]
 BASESCRIPT="$(basename $0)"
-SYNTAX="$0 [[rsync|rsync-only]|[[diff-backup|diff] [db-only]]] [VHOST]"
+SYNTAX="$0 [[rsync|rsync-only]|[[diff-backup|diff] [db-only]]] [VHOST] [PATH]"
 
 PWD_SRC="$(pwd)"
 SETTINGS_FILE="/etc/SFSit_MST.conf.sh"
@@ -27,6 +27,7 @@ if [ -s "$SETTINGS_FILE" ]; then
 	GRIVE_EMAIL="$(sh "$SETTINGS_FILE" GRIVE_EMAIL)"
 	GRIVE_DIR="$(sh "$SETTINGS_FILE" GRIVE_DIR)"
 	GRIVE_SUBDIR_BACKUPS="$( sh "$SETTINGS_FILE" GRIVE_SUBDIR_BACKUPS | sed -E 's;^(/*)(.*[^/])*(/*)$;\2;g' )"
+	
 	[ "x$GRIVE_DIR" = "x" ] &&  GRIVE_DIR="$VHOSTS_DIR/gDrive"
 	[ "x$GRIVE_SUBDIR_BACKUPS" = "x" ] &&  GRIVE_SUBDIR_BACKUPS="backups"
 	[ "x$GRIVE_DIR" != "x" -a ! -e "$GRIVE_DIR" ] && \
@@ -87,6 +88,13 @@ else
                 fi
         fi
 fi
+PATH_BACKUP=''
+if [ "x$DB_ONLY" = "xDB-ONLY" ]; then
+        [ "x$3" != "x" ] && PATH_BACKUP="$3"
+else
+        [ "x$2" != "x" ] && PATH_BACKUP="$2"
+fi
+
 
 if cd "$VHOSTS_DIR"; then
 	for VHOST_ACCOUNTFILE in $(ls -1 $VHOSTS_DIR/$VHOST/account.txt); do
@@ -143,7 +151,7 @@ if cd "$VHOSTS_DIR"; then
 				fi
 			fi
 			cd "$VHOST_PATH"
-			mysqldump --opt "$USER" > "dump-$USER.sql" -u "$USER" --password="$MYSQL_PWD" || exit_with_error "BACKUP DATABASE $VHOST NON ESEGUITO CORRETTAMENTE"
+			mysqldump --opt "$USER" > "dump-$USER.sql" -u "$USER" --password="$MYSQL_PWD" || exit_with_error "BACKUP $VHOST NON ESEGUITO CORRETTAMENTE"
 			if [ "x$DB_ONLY" = "xDB-ONLY" ]; then
 				if [ -e "$DIFF_BACKUPFILE" -a "x$DIFF_BACKUP" = "xFILE" ]; then
 					DIFF_DUMP_TIMEMARK="$(date -d "$(stat -c %y $DIFF_BACKUPFILE)"  "+%Y%m%d%H%M")"
@@ -189,25 +197,30 @@ if cd "$VHOSTS_DIR"; then
 			fi
 			if [ "x$DB_ONLY" = "xDB-ONLY" ]; then
 				BACKUPNAME="$( echo $BACKUPNAME | sed -E "s;$VHOST_HOSTNAME-;$VHOST_HOSTNAME-db-$USER-;g" )"
-				mv "dump-$USER.sql" "$USER_GRIVE_DIR/$GRIVE_SUBDIR_BACKUPS/$BACKUPNAME.sql" || exit_with_error "BACKUP DATABASE '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE"
-				chown "$USER":"$WWW_GROUP" "$USER_GRIVE_DIR/$GRIVE_SUBDIR_BACKUPS/$BACKUPNAME.sql" || exit_with_error "BACKUP DATABASE '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE"
+				if [ "x$PATH_BACKUP" = "x" ]; then
+					BACKUP_TGT_DIR="$USER_GRIVE_DIR/$GRIVE_SUBDIR_BACKUPS/"
+				else
+					BACKUP_TGT_DIR=$PATH_BACKUP
+				fi
+				mv "dump-$USER.sql" "$BACKUP_TGT_DIR/$BACKUPNAME.sql" || exit_with_error "BACKUP '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE"
+				chown "$USER":"$WWW_GROUP" "$BACKUP_TGT_DIR/$BACKUPNAME.sql" || exit_with_error "BACKUP '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE"
 				if [  "x$DIFF_BACKUP" = 'xFILE' -a "x$DIFF_BACKUPFILE" != "x" ]; then
 					BACKUPNAME_DIFF="$VHOST_HOSTNAME-db-$USER-$DIFF_DUMP_TIMEMARK-$TIMEMARK"
-					mv "dump-$USER-$DIFF_DUMP_TIMEMARK-$TIMEMARK.diff" "$USER_GRIVE_DIR/$GRIVE_SUBDIR_BACKUPS/$BACKUPNAME_DIFF.sql.diff" || exit_with_error "BACKUP DIFF DATABASE '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE"
-					chown "$USER":"$WWW_GROUP" "$USER_GRIVE_DIR/$GRIVE_SUBDIR_BACKUPS/$BACKUPNAME_DIFF.sql.diff" || exit_with_error "BACKUP DIFF DATABASE '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE"
+					mv "dump-$USER-$DIFF_DUMP_TIMEMARK-$TIMEMARK.diff" "$BACKUP_TGT_DIR/$BACKUPNAME_DIFF.sql.diff" || exit_with_error "BACKUP '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE"
+					chown "$USER":"$WWW_GROUP" "$BACKUP_TGT_DIR/$BACKUPNAME_DIFF.sql.diff" || exit_with_error "BACKUP '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE"
 				fi
 			else
-				chown "$USER":"$WWW_GROUP" "dump-$USER.sql" || exit_with_error "BACKUP DATABASE '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE"
-				chmod 600 "dump-$USER.sql" || exit_with_error "BACKUP DATABASE '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE"
+				chown "$USER":"$WWW_GROUP" "dump-$USER.sql" || exit_with_error "BACKUP '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE"
+				chmod 600 "dump-$USER.sql" || exit_with_error "BACKUP '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE"
 				if [ "x$APACHE_CONF" = "xSAVE" ]; then
-					cp -f "/etc/apache2/sites-available/$VHOST_HOSTNAME" "apache2-vhost.conf" || exit_with_error "BACKUP CONF APACHE '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE"
-					chown "$USER":"$WWW_GROUP" "apache2-vhost.conf" || exit_with_error "BACKUP CONF APACHE '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE"
-					chmod 600 "apache2-vhost.conf"  || exit_with_error "BACKUP CONF APACHE '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE"
+					cp -f "/etc/apache2/sites-available/$VHOST_HOSTNAME" "apache2-vhost.conf" || exit_with_error "BACKUP '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE"
+					chown "$USER":"$WWW_GROUP" "apache2-vhost.conf" || exit_with_error "BACKUP '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE"
+					chmod 600 "apache2-vhost.conf"  || exit_with_error "BACKUP '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE"
 				fi
 				if [ "x$SAMBA_CONF" = "xSAVE" ]; then
-					cp -f "/etc/samba/smb.conf.d/$VHOST_HOSTNAME.smb.conf" "samba-share.conf" || exit_with_error "BACKUP CONF SAMBA '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE"
-					chown "$USER":"$WWW_GROUP" "samba-share.conf" || exit_with_error "BACKUP CONF SAMBA '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE"
-					chmod 600 "dump-$USER.sql" "samba-share.conf" || exit_with_error "BACKUP CONF SAMBA '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE"
+					cp -f "/etc/samba/smb.conf.d/$VHOST_HOSTNAME.smb.conf" "samba-share.conf" || exit_with_error "BACKUP '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE"
+					chown "$USER":"$WWW_GROUP" "samba-share.conf" || exit_with_error "BACKUP '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE"
+					chmod 600 "dump-$USER.sql" "samba-share.conf" || exit_with_error "BACKUP '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE"
 				fi
 				find . \! \( -name "*.tbz" -o -name "*.tbz.log"  -o -name "*.jpa" \) -fprintf "filelist-$TIMEMARK.ls" "%u:%g\t%m\t%s\t%p\n"
 				find . $FIND_OPT_DIFF_BACKUP -type f -a \! \( -name "*.tbz" -o -name "*.tbz.log"  -o -name "*.jpa" \) > "list-files2tar-$TIMEMARK.ls"
@@ -216,17 +229,13 @@ if cd "$VHOSTS_DIR"; then
 					rm "list-files2tar-$TIMEMARK.ls"
 					mv "tmplist-files2tar-$TIMEMARK.ls" "list-files2tar-$TIMEMARK.ls"
 				done
-				chown "$USER":"$WWW_GROUP" "filelist-$TIMEMARK.ls" "list-files2tar-$TIMEMARK.ls" || exit_with_error "BACKUP FILELIST '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE"
-				chmod 600 "filelist-$TIMEMARK.ls" "list-files2tar-$TIMEMARK.ls" || exit_with_error "BACKUP FILELIST '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE"
-				tar -cvjf "$USER_GRIVE_DIR/$GRIVE_SUBDIR_BACKUPS/$BACKUPNAME.tbz" --files-from="list-files2tar-$TIMEMARK.ls" > "$USER_GRIVE_DIR/$GRIVE_SUBDIR_BACKUPS/$BACKUPNAME.tbz.log" 2>&1 
-				TAR_EXIT_STATUS=$?
-				if [ $TAR_EXIT_STATUS -eq 1 ]; then
-					exit_with_error "BACKUP TAR (Some files differ) '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE: ELIMINARE MANUALMENTE IL FILE: '$USER_GRIVE_DIR/$GRIVE_SUBDIR_BACKUPS/$BACKUPNAME.tbz'"
-				elif [ $TAR_EXIT_STATUS -eq 2 ]; then
-					exit_with_error "BACKUP TAR (fatal error) '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE: ELIMINARE MANUALMENTE IL FILE: '$USER_GRIVE_DIR/$GRIVE_SUBDIR_BACKUPS/$BACKUPNAME.tbz'"
-				fi
-				chown "$USER":"$WWW_GROUP" "$USER_GRIVE_DIR/$GRIVE_SUBDIR_BACKUPS/$BACKUPNAME.tbz" || exit_with_error "BACKUP TAR '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE"
-				chmod 600 "$USER_GRIVE_DIR/$GRIVE_SUBDIR_BACKUPS/$BACKUPNAME.tbz" || exit_with_error "BACKUP TAR '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE"
+				chown "$USER":"$WWW_GROUP" "filelist-$TIMEMARK.ls" "list-files2tar-$TIMEMARK.ls" || exit_with_error "BACKUP '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE"
+				chmod 600 "filelist-$TIMEMARK.ls" "list-files2tar-$TIMEMARK.ls" || exit_with_error "BACKUP '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE"
+				tar -cvjf "$USER_GRIVE_DIR/$GRIVE_SUBDIR_BACKUPS/$BACKUPNAME.tbz" --files-from="list-files2tar-$TIMEMARK.ls" > "$USER_GRIVE_DIR/$GRIVE_SUBDIR_BACKUPS/$BACKUPNAME.tbz.log" 2>&1 \
+					|| exit_with_error "BACKUP '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE: ELIMINARE MANUALMENTE IL FILE: '$pwd/$BACKUPNAME.tbz'"
+				
+				chown "$USER":"$WWW_GROUP" "$USER_GRIVE_DIR/$GRIVE_SUBDIR_BACKUPS/$BACKUPNAME.tbz" || exit_with_error "BACKUP '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE"
+				chmod 600 "$USER_GRIVE_DIR/$GRIVE_SUBDIR_BACKUPS/$BACKUPNAME.tbz" || exit_with_error "BACKUP '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE"
 				rm "dump-$USER.sql" "filelist-$TIMEMARK.ls" "list-files2tar-$TIMEMARK.ls" || exit_with_error "CLEAN TMP FILES '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE"
 				[ -e "dump-$USER-$DIFF_DUMP_TIMEMARK-$TIMEMARK.diff" ] && ( rm "dump-$USER-$DIFF_DUMP_TIMEMARK-$TIMEMARK.diff" || exit_with_error "CLEAN TMP FILES '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE" )
 				[ "x$APACHE_CONF" = "xSAVE" ] && ( rm "apache2-vhost.conf" || exit_with_error "CLEAN TMP FILES '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE" )
@@ -236,7 +245,7 @@ if cd "$VHOSTS_DIR"; then
 			if [ "x$DIFF_BACKUP" = "x" ]; then
 				echo "  BACKUP $VHOST_HOSTNAME ESEGUITO CORRETTAMENTE"
 				if [ "x$DB_ONLY" = "xDB-ONLY" ]; then
-					echo "  	CREATO: '$USER_GRIVE_DIR/$GRIVE_SUBDIR_BACKUPS/$BACKUPNAME.sql'"
+					echo "  	CREATO: '$BACKUP_TGT_DIR/$BACKUPNAME.sql'"
 				else
 					echo "  	CREATO: '$USER_GRIVE_DIR/$GRIVE_SUBDIR_BACKUPS/$BACKUPNAME.tbz'"
 				fi
@@ -244,9 +253,9 @@ if cd "$VHOSTS_DIR"; then
 				if [ "x$DIFF_BACKUP" = "xFILE" ]; then
 					echo "  BACKUP DIFFERENZIALE DI '$VHOST_HOSTNAME' ESEGUITO CORRETTAMENTE"
 					if [ "x$DB_ONLY" = "xDB-ONLY" ]; then
-						echo "  	CREATO: '$USER_GRIVE_DIR/$GRIVE_SUBDIR_BACKUPS/$BACKUPNAME.sql'"
+						echo "  	CREATO: '$BACKUP_TGT_DIR/$BACKUPNAME.sql'"
 						echo "  	COTENENTE COPIA DEL DATABASE"
-						echo "  	CREATO: '$USER_GRIVE_DIR/$GRIVE_SUBDIR_BACKUPS/$BACKUPNAME_DIFF.sql.diff'"
+						echo "  	CREATO: '$BACKUP_TGT_DIR/$BACKUPNAME_DIFF.sql.diff'"
 					else
 						echo "  	CREATO: '$USER_GRIVE_DIR/$GRIVE_SUBDIR_BACKUPS/$BACKUPNAME.tbz'"
 					fi
@@ -255,7 +264,7 @@ if cd "$VHOSTS_DIR"; then
 					if [ "x$DIFF_BACKUP" = "xDATE" ]; then
 						echo "  BACKUP DEGLI ULTIMI $DIFF_NDAYS GIORNI DI '$VHOST_HOSTNAME' ESEGUITO CORRETTAMENTE"
 						if [ "x$DB_ONLY" = "xDB-ONLY" ]; then
-							echo "  	CREATO: '$USER_GRIVE_DIR/$GRIVE_SUBDIR_BACKUPS/$BACKUPNAME.sql'"
+							echo "  	CREATO: '$BACKUP_TGT_DIR/$BACKUPNAME.sql'"
 						else
 							echo "  	CREATO: '$USER_GRIVE_DIR/$GRIVE_SUBDIR_BACKUPS/$BACKUPNAME.tbz'"
 						fi
