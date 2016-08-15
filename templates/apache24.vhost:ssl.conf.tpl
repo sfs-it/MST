@@ -32,9 +32,9 @@
 	LogLevel warn
 	CustomLog {$VHOSTS_DIR}/{$VHOST}/{$HTTPLOGS_DIR}/access.log combined
 	SSLEngine on
-	SSLCertificateFile    /usr/local/etc/letsencrypt/archive/{$VHOST}/cert1.pem
-	SSLCertificateKeyFile /usr/local/etc/letsencrypt/archive/{$VHOST}/privkey1.pem
-	SSLCertificateChainFile /usr/local/etc/letsencrypt/archive/{$VHOST}/fullchain1.pem
+	SSLCertificateFile    /usr/local/etc/letsencrypt/live/{$VHOST}/cert.pem
+	SSLCertificateKeyFile /usr/local/etc/letsencrypt/live/{$VHOST}/privkey.pem
+	SSLCertificateChainFile /usr/local/etc/letsencrypt/live/{$VHOST}/fullchain.pem
 	
 	<FilesMatch "\.(cgi|shtml|phtml|php)$">
 	   SSLOptions +StdEnvVars

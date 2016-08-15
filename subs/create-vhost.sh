@@ -42,7 +42,7 @@ DOMAIN=$(cat $VHOST_ACCOUNTFILE | grep 'DOMAIN:' | sed 's/^DOMAIN:\s*//' | sed '
 ADMIN_EMAIL=$(cat $VHOST_ACCOUNTFILE | grep 'ADMIN_EMAIL:' | sed 's/^ADMIN_EMAIL:\s*//' | sed 's/^[[:blank:]]*//g')
 VHOST_ONDOMAIN=$(echo $VHOST | sed -E 's/(\.[^\.]*)$//' | sed 's/^[[:blank:]]*//g')
 
-if [ "x$DOMAIN" != "x" -a "x$MY_DOMAIN" != "x$DOMAIN" ]; then
+if [ "x$DOMAIN" != "x" -a \( "x$( get_host $VHOST )" = "xwww" \) ]; then
         SERVER_ALIASES="\tServerAlias $DOMAIN\n"
 else
         SERVER_ALIASES=""
@@ -53,10 +53,10 @@ while [ "x$2" != "x" ]; do
                 PRESENCE_CHECK=$(printf "$SERVER_ALIASES" | grep "ServerAlias $VHOST_ALIAS")
                 if [ "x$PRESENCE_CHECK" = "x" ]; then
                         SERVER_ALIASES="$SERVER_ALIASES\tServerAlias $VHOST_ALIAS\n"
-                        if [ ${#VHOST_ALIAS} -gt 4 -a "x$(echo $VHOST_ALIAS | sed 's/^\(www.\)\(.*\)$/\1/')" = 'xwww.' ]; then
-                                VHOST_ALIAS_DOMAIN="$(echo $VHOST_ALIAS | sed -e 's/^\(www.\)\(.*\)$/\2/')"
+                        if [ ${#VHOST_ALIAS} -gt 4 -a "x$( get_host $VHOST_ALIAS )" = 'xwww.' ]; then
+                                VHOST_ALIAS_DOMAIN="$( get_domain $VHOST_ALIAS )"
                                 PRESENCE_CHECK=$(printf "$SERVER_ALIASES" | grep "ServerAlias $VHOST_ALIAS_DOMAIN")
-                                if [ "x$VHOST_ALIAS_DOMAIN" != "x" -a "x$MY_DOMAIN" != "x$VHOST_ALIAS_DOMAIN" -a "x$PRESENCE_CHECK" = "x" ]; then
+                                if [ "x$VHOST_ALIAS_DOMAIN" != "x" -a "x$PRESENCE_CHECK" = "x" ]; then
                                         SERVER_ALIASES="$SERVER_ALIASES\tServerAlias $VHOST_ALIAS_DOMAIN\n"
                                 fi
                         fi
