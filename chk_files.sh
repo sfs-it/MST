@@ -31,11 +31,14 @@ if [ -s "$SETTINGS_FILE" ]; then
 	ADMIN_EMAIL="$(sh "$SETTINGS_FILE" ADMIN_EMAIL)"
 	VHOSTS_DIR="$(sh "$SETTINGS_FILE" VHOSTS_DIR)"
 	HTTPDOCS_DIR="$(sh "$SETTINGS_FILE" HTTPDOCS_DIR)"
+	MAIL_HOSTNAME="$(sh "$SETTINGS_FILE" MAIL_HOSTNAME)"
+else
+	echo "NO CONFIG SET COPY SFSit_MST.conf.sh.orig /etc/SFSit_MST.conf.sh or /root/SFSit_MST.conf.sh and set local variables"
+	exit 1
 fi
 
 NDAYS=1
 VHOST="*"
-MAIL_HOSTNAME="$(cat /etc/mailname)"
 
 if [ "x$1" != "x" ]; then
 	NOMAIL="$(echo $1 | tr '[:lower:]' '[:upper:]')"
@@ -64,12 +67,22 @@ fi
 ##
 ## INIT THE TRUE SCRIPT
 ##
-STARTTIMEMARK="$(date -d "$NDAYS day ago" "+%Y%m%d%H%M")"
-ENDTIMEMARK="$(date "+%Y%m%d%H%M")"
+if [ "x$(uname)" = 'xFreeBSD' ]; then
+	STARTTIMEMARK="$(date -v-${NDAYS}d "+%Y%m%d%H%M")"
+	ENDTIMEMARK="$(date "+%Y%m%d%H%M")"
+else
+	STARTTIMEMARK="$(date -d "$NDAYS day ago" "+%Y%m%d%H%M")"
+	ENDTIMEMARK="$(date "+%Y%m%d%H%M")"
+fi
 MFILE="mfiles_$STARTTIMEMARK-$ENDTIMEMARK"
 ( touch -t "$STARTTIMEMARK" "/tmp/$MFILE.ls" ) || exit_with_error "ERROR: CANNOT CREATE MARKER/LS FILE '/tmp/$MFILE.ls'"
-STARTDATE="$(date -d "$NDAYS day ago" "+%H:%M %d/%m/%Y")"
-ENDDATE="$(date "+%H:%M %d/%m/%Y")"
+if [ "x$(uname)" = 'xFreeBSD' ]; then
+	STARTDATE="$(date -v-${NDAYS}d "+%H:%M %d/%m/%Y")"
+	ENDDATE="$(date "+%H:%M %d/%m/%Y")"
+else
+	STARTDATE="$(date -d "$NDAYS day ago" "+%H:%M %d/%m/%Y")"
+	ENDDATE="$(date "+%H:%M %d/%m/%Y")"
+fi
 ( echo "$MAIL_HOSTNAME: MODIFIED FILES FROM $STARTDATE TO $ENDDATE" > "/tmp/$MFILE.head" ) || exit_with_error "ERROR: CANNOT CREATE HEADER FILE '/tmp/$MFILE.head'"
 if cd "$VHOSTS_DIR"; then
 	for VHOST_ACCOUNTFILE in $(ls -1 $VHOSTS_DIR/$VHOST/account.txt); do
@@ -78,8 +91,8 @@ if cd "$VHOSTS_DIR"; then
 		find $VHOST_PATH/$HTTPDOCS_DIR -newer "/tmp/$MFILE.ls" -ls | sed "s#$VHOST_PATH/$HTTPDOCS_DIR/#  #" | grep -v "$VHOST_PATH/$HTTPDOCS_DIR"  > "$VHOST_PATH/$MFILE.ls"
 		if [ -s "$VHOST_PATH/$MFILE.ls" ]; then 
 			VHOST_HOSTNAME="$(echo "$VHOST_PATH" | sed "s#$VHOSTS_DIR/##")" 
-			VHOST_ADMIN_EMAIL="$(cat` "$VHOST_ACCOUNTFILE" | grep 'ADMIN_EMAIL:' | sed 's/^ADMIN_EMAIL:\s*//')"
-			VHOST_HOST_EMAIL="$(cat` "$VHOST_ACCOUNTFILE" | grep 'VHOST_EMAIL:' | sed 's/^VHOST_EMAIL:\s*//')"
+			VHOST_ADMIN_EMAIL="$(cat "$VHOST_ACCOUNTFILE" | grep 'ADMIN_EMAIL:' | sed 's/^ADMIN_EMAIL:\s*//')"
+			VHOST_HOST_EMAIL="$(cat "$VHOST_ACCOUNTFILE" | grep 'VHOST_EMAIL:' | sed 's/^VHOST_EMAIL:\s*//')"
 			if [ "x$VHOST_HOST_EMAIL" != "x"  -a "x$VHOST_HOST_EMAIL" != "x$HOST_EMAIL" ] || \
 			   [ "x$VHOST_ADMIN_EMAIL" != "x" -a "x$VHOST_ADMIN_EMAIL" != "x$ADMIN_EMAIL" ]; then
 				test "x$VHOST_HOST_EMAIL" == "x" && VHOST_HOST_EMAIL="$HOST_EMAIL"
