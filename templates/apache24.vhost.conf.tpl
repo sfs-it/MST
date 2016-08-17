@@ -1,11 +1,11 @@
 # ######################### #
-# VIRTUALHOST FOR {$DOMAIN}
+# VIRTUALHOST FOR {$VHOST}
 # ######################### #
 
 <VirtualHost *:80>
-	ServerName   {$VHOST}
+	ServerName {$VHOST_HOSTNAME}
 {$SERVER_ALIASES}
-	ServerAdmin  {$ADMIN_EMAIL}
+	ServerAdmin {$ADMIN_EMAIL}
 
 	DocumentRoot {$VHOSTS_DIR}/{$VHOST}/{$HTTPDOCS_DIR}
 	<Directory />
@@ -35,15 +35,11 @@
 
 # ################################################################################## #
 # Alias for http:/{$HOSTNAME}/{$USER}
-#           http:/{$HOSTNAME}/{$VHOST_ONDOMAIN} 
 #           http:/{$HOSTNAME}/{$VHOST}
-#           http:/{$HOSTNAME}/{$DOMAIN}
 # ################################################################################## #
 
 Alias /{$USER} {$VHOSTS_DIR}/{$VHOST}/{$HTTPDOCS_DIR}
-Alias /{$VHOST_ONDOMAIN} {$VHOSTS_DIR}/{$VHOST}/{$HTTPDOCS_DIR}
 Alias /{$VHOST} {$VHOSTS_DIR}/{$VHOST}/{$HTTPDOCS_DIR}
-# Alias /{$DOMAIN} {$VHOSTS_DIR}/{$VHOST}/{$HTTPDOCS_DIR}
 <Directory {$VHOSTS_DIR}/{$VHOST}/{$HTTPDOCS_DIR}>
 	AllowOverride FileInfo AuthConfig Limit Indexes
 	Options MultiViews Indexes SymLinksIfOwnerMatch IncludesNoExec FollowSymLinks

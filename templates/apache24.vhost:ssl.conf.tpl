@@ -1,11 +1,11 @@
 # ######################### #
-# VIRTUALHOST SSL FOR {$DOMAIN}
+# VIRTUALHOST SSL FOR {$VHOST}
 # ######################### #
 
 <VirtualHost *:443>
-	ServerName {$VHOST}
+	ServerName {$VHOST_HOSTNAME}
 {$SERVER_ALIASES}
-	ServerAdmin  {$ADMIN_EMAIL}
+	ServerAdmin {$ADMIN_EMAIL}
 
 	DocumentRoot {$VHOSTS_DIR}/{$VHOST}/{$HTTPDOCS_DIR}
 	<Directory />

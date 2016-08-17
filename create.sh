@@ -14,22 +14,27 @@ SYNTAX="$BASESCRIPT VHOST USER [PWD_FTP [PWD_MYSQL [HOST_EMAIL [ADMIN_EMAIL [GRI
 SETTINGS_FILE="/etc/SFSit_MST.conf.sh"
 test -s "/root/SFSit_MST.conf.sh" && SETTINGS_FILE="/root/SFSit_MST.conf.sh"
 if [ -s "$SETTINGS_FILE" ]; then
-	HOSTNAME="$(sh "$SETTINGS_FILE" HOSTNAME)"
-	test "x$HOSTNAME" = "x" && HOSTNAME="$(hostname)"
-	VHOSTS_DIR="$(sh "$SETTINGS_FILE" VHOSTS_DIR)"
-	HOST_EMAIL="$(sh "$SETTINGS_FILE" ADMIN_EMAIL)"
-	ADMIN_EMAIL="$(sh "$SETTINGS_FILE" ADMIN_EMAIL)"
-	GRIVE_ENABLED="$(sh "$SETTINGS_FILE" GRIVE_ENABLED | tr '[:lower:]' '[:upper:])"
-	GRIVE_EMAIL="$(sh "$SETTINGS_FILE" GRIVE_EMAIL)"
-	GRIVE_DIR="$(sh "$SETTINGS_FILE" GRIVE_DIR)"
-	GRIVE_SUBDIR_BACKUPS="$(sh "$SETTINGS_FILE" GRIVE_SUBDIR_BACKUPS | sed -E 's;^(/*)(.*[^/])*(/*)$;\2;g')"
-	HTTPS_ENABLED="$(sh "$SETTINGS_FILE" HTTPS_ENABLED | tr '[:lower:]' '[:upper:])"
-	SAMBA_ENABLED="$(sh "$SETTINGS_FILE" SAMBA_ENABLED | tr '[:lower:]' '[:upper:])"
-	MYSQL_ENABLED="$(sh "$SETTINGS_FILE" MYSQL_ENABLED | tr '[:lower:]' '[:upper:])"
-	LOGROTATE_ENABLED="$(sh "$SETTINGS_FILE" LOGROTATE_ENABLED | tr '[:lower:]' '[:upper:])"
-	[ 'x' = "$GRIVE_EMAIL" ] && GRIVE_EMAIL="$ADMIN_EMAIL"
-	[ 'x' = "$GRIVE_DIR" ] && GRIVE_DIR="$VHOSTS_DIR/gDrive"
-	[ 'x' = "$GRIVE_SUBDIR_BACKUPS" ] && GRIVE_SUBDIR_BACKUPS='backups'
+        HOSTNAME="$(sh "$SETTINGS_FILE" HOSTNAME)"
+        test "x$HOSTNAME" = "x" && HOSTNAME="$(hostname)"
+        VHOSTS_DIR="$(sh "$SETTINGS_FILE" VHOSTS_DIR)"
+        HOST_EMAIL="$(sh "$SETTINGS_FILE" ADMIN_EMAIL)"
+        ADMIN_EMAIL="$(sh "$SETTINGS_FILE" ADMIN_EMAIL)"
+        GRIVE_ENABLED="$(sh "$SETTINGS_FILE" GRIVE_ENABLED | tr '[:lower:]' '[:upper:]')"
+	if [ "x$GRIVE_ENABLED" = 'xYES' ]; then
+		GRIVE_EMAIL="$(sh "$SETTINGS_FILE" GRIVE_EMAIL)"
+		GRIVE_DIR="$(sh "$SETTINGS_FILE" GRIVE_DIR)"
+		GRIVE_SUBDIR_BACKUPS="$(sh "$SETTINGS_FILE" GRIVE_SUBDIR_BACKUPS | sed -E 's;^(/*)(.*[^/])*(/*)$;\2;g')"
+		[ 'x' = "$GRIVE_EMAIL" ] && GRIVE_EMAIL="$ADMIN_EMAIL"
+		[ 'x' = "$GRIVE_DIR" ] && GRIVE_DIR="$VHOSTS_DIR/gDrive"
+		[ 'x' = "$GRIVE_SUBDIR_BACKUPS" ] && GRIVE_SUBDIR_BACKUPS='backups'
+	fi
+        HTTPS_ENABLED="$(sh "$SETTINGS_FILE" HTTPS_ENABLED | tr '[:lower:]' '[:upper:]')"
+        SAMBA_ENABLED="$(sh "$SETTINGS_FILE" SAMBA_ENABLED | tr '[:lower:]' '[:upper:]')"
+        MYSQL_ENABLED="$(sh "$SETTINGS_FILE" MYSQL_ENABLED | tr '[:lower:]' '[:upper:]')"
+        LOGROTATE_ENABLED="$(sh "$SETTINGS_FILE" LOGROTATE_ENABLED | tr '[:lower:]' '[:upper:]')"
+else
+	echo "NO CONFIG FOUND"
+	exit 1
 fi
 
 PWD_SRC="$(pwd)"
@@ -39,11 +44,12 @@ exit_with_error(){
 	cd "$PWD_SRC"
 	exit 1
 }
-
 [ "x$1" = 'x' ] && exit_with_error "$SYNTAX: VHOST NEEDED"
 VHOST="$1"
 [ "x$1" = 'x' ] && exit_with_error "$SYNTAX: USER NEEDED"
 USER="$2"
+id $USER 2>&1 > /dev/null 
+[ $? -eq 0 ] && exit_with_error "USER $USER ALREADY EXISTS"
 param_aliases=3
 while [ $param_aliases -le $# ]; do
 	eval param='$'$param_aliases
@@ -81,30 +87,37 @@ sh ./subs/create-account.txt.sh "$VHOST" "$USER" "$PWD_FTP" "$PWD_MYSQL" "$HOST_
 echo "report 'account.txt' file created"
 echo "CREATE '$USER' account"
 sh ./subs/create-user.sh "$VHOST" || exit_with_error "ERROR: CREATING USER '$USER'"
-echo "user '$USER' created"
 echo "CREATE $VHOST in $VHOSTS_DIR of $HOSTNAME for $USER with ftp password '$PWD_FTP' and mysql password: '$PWD_MYSQL'"
 sh ./subs/create-vhost.sh "$VHOST" $VHOST_ALIASES ||exit_with_error "ERROR: CREATING VHOST '$VHOST'"
-if [ "x$HTTPS_ENABLES" = "xYES" ]; then
+if [ "x$HTTPS_ENABLED" = "xYES" ]; then
     sh ./subs/create-vhost-ssl.sh "$VHOST" $VHOST_ALIASES ||exit_with_error "ERROR: CREATING VHOST SSL '$VHOST'"
+else
+	echo "** HTTPS VHOST config is disabled, to enable add \"HTTPS_ENABLED='YES'\" to your $SETTINGS_FILE"
 fi
 echo "vhost '$VHOST' created"
 if [ "x$MYSQL_ENABLED" = "xYES" ]; then
 	echo "CREATE $VHOST DATABASE (named $USER)"
 	sh ./subs/create-db.sh "$VHOST" || exit_with_error "ERROR: CREATING DB for user '$USER'"
-	echo "db '$USER' created"
+else
+	echo "** MYSQL is disabled, to enable add \"MYSQL_ENABLED='YES'\" to your $SETTINGS_FILE"
 fi
 if [ "x$GRIVE_ENABLED" = "xYES" ]; then
 	echo "ADD GRIVE PARAMETERS TO account.txt"
 	sh ./subs/grive-account.txt.sh "$VHOST" "$GRIVE_EMAIL" "$GRIVE_DIR" "$GRIVE_SUBDIR_BACKUPS" || exit_with_error "ERROR: UPDATING account.txt FOR GRIVE PARAMETERS"
+else
+	echo "** GRIVE is disabled, to enable add \"GRIVE_ENABLED='YES'\" to your $SETTINGS_FILE"
 fi
 if [ "x$SAMBA_ENABLED" = "xYES" ]; then
+	echo "CREATE smb '$VHOST' SHARE"
 	sh ./subs/create-smb-share.sh "$VHOST" || exit_with_error "ERROR: CREATING SMB SHARE FOR $VHOST"
-	echo "smb '$VHOST' share created"
+else
+	echo "** SAMBA is disabled, to enable add \"SAMBA_ENABLED='YES'\" to your $SETTINGS_FILE"
 fi
 if [ "x$LOGROTATE_ENABLED" = "xYES" ]; then
-	echo "CREATE logrotate for '$VHOST'"
+	echo "CREATE logrotate entry for '$VHOST'"
 	sh ./subs/create-logrotate.sh "$VHOST" || exit_with_error "ERROR: CREATING LOG ROTATE FOR $VHOST"
-	echo "logrotate '$VHOST' entry created"
+else
+	echo "** LOGROTATE is disabled, to enable add \"LOGROTATE_ENABLED='YES'\" to your $SETTINGS_FILE"
 fi
 echo "SEND email to $ADMIN_EMAIL"
 sh ./subs/create-sendmail.sh "$VHOST" || exit_with_error  "ERROR: SENDING REPORT"

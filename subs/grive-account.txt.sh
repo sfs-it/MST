@@ -20,7 +20,7 @@ if [ -s "$SETTINGS_FILE" ]; then
 	HOST_EMAIL="$(sh "$SETTINGS_FILE" HOST_EMAIL)"
 	ADMIN_EMAIL="$(sh "$SETTINGS_FILE" ADMIN_EMAIL)"
 	VHOSTS_DIR="$(sh "$SETTINGS_FILE" VHOSTS_DIR)"
-        GRIVE_ENABLED="$(sh "$SETTINGS_FILE" GRIVE_ENABLED | tr '[:lower:]' '[:upper:])"
+        GRIVE_ENABLED="$(sh "$SETTINGS_FILE" GRIVE_ENABLED | tr '[:lower:]' '[:upper:]')"
 	if [ "x$GRIVE_ENABLED" = 'xYES' ]; then
 		GRIVE_EMAIL="$(sh "$SETTINGS_FILE" GRIVE_EMAIL)"
 		GRIVE_DIR="$(sh "$SETTINGS_FILE" GRIVE_DIR)"
@@ -30,7 +30,7 @@ if [ -s "$SETTINGS_FILE" ]; then
 		[ 'x' = "$GRIVE_SUBDIR_BACKUPS" ] && GRIVE_SUBDIR_BACKUPS='backups'
 	fi
 fi
-if [ "x$GRIVE_ENABLED" !== 'xYES' ]; then
+if [ "x$GRIVE_ENABLED" != 'xYES' ]; then
 	exit 0;
 fi
 PWD_SRC="$(pwd)"
@@ -50,7 +50,7 @@ VHOST="$1"
 VHOST_ACCOUNTFILE="$VHOSTS_DIR/$VHOST/account.txt";
 [ -s "$VHOST_ACCOUNTFILE" ] || exit_with_error "ERROR: CANNOT LOAD 'account.txt' FOR $VHOST"
 
-echo 'UPDATE account.txt for GRIVE PARAMTERS'
+echo 'UPDATE account.txt for GRIVE PARAMETERS'
 ( printf "\n#GRIVE\n\tGRIVE_EMAIL: $GRIVE_EMAIL\n\tGRIVE_DIR: $GRIVE_DIR\n\tGRIVE_SUBDIR_BACKUPS: $GRIVE_SUBDIR_BACKUPS\n" \
         |  tr '\r' '\n' \
         >> $VHOST_ACCOUNTFILE ) || exit_with_error "ERROR: updating GRIVE paramters '$VHOST_ACCOUNTFILE'"

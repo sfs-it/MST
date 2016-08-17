@@ -10,6 +10,15 @@ WWW_USER='www-data'			# www (on freebsd)
 					# www-user (on ubuntu www-data on apache2)
 WWW_GROUP='www'				# www (on freebsd)
 					# www-group (on ubuntu www-data on apache2)
+DEVEL_DOMAIN=""				# USE DEVEL DOMAIN, set it for development
+					# machine, it change hostnames to a hostname
+					# for development
+					# www.demo.domain to www.demo.$DEVEL_DOMAIN
+					# DEVEL_DOMAIN="local"
+					# www.demo.it => www.demo.local
+					# if you use a FQDN, and set the correct hosts
+					# into DEVEL_DOMAIN dns, you can use https
+					# certbot for SSL
 # MAILING SYSTEM
 MAIL_HOSTNAME='ACCOUNT@GMAIL'		# MAIL USED BY CHK_FILES for sending modified
 					# files on system
@@ -28,7 +37,6 @@ SAMBA_CONF='SAVE'			# SAVE SAMBA CONFIGURATION ON CREATE VHOST
 # MAILNG SETTINGS
 ADMIN_EMAIL='admin@email.QDN'		# Default email who send email
 HOST_EMAIL='host@email.QDN'		# Default email sender
-MY_DOMAIN='QDN'				# mydomanin.local
 
 # GRIVE AND RSYNC
 GRIVE_EMAIL='ACCOUNT@gmail.com'		# account enabled for grive sync tool

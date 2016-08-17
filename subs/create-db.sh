@@ -37,6 +37,7 @@ PWD_MYSQL="$(cat $VHOST_ACCOUNTFILE | grep 'PWD_MYSQL:' | sed 's/^PWD_MYSQL:\s*/
 	| sed -E "s/\\{\\\$USER\\}/$USER/g" \
 	| sed -E "s/\\{\\\$PWD_MYSQL\\}/$(echo $PWD_MYSQL | sed 's;&;\\&;g')/g" \
 	| mysql --password="$MYSQL_ROOT_PWD" ) || exit_with_error "ERROR: CREATING USER AND DB"
+echo "DB user:'$USER' and db:'$USER' FOR '$VHOST' CREATED" 
 cd "$PWD_SRC"
 exit 0
 

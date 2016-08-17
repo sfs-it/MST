@@ -43,18 +43,14 @@ USER=$2
 #UID="$(id -u $USER)"
 PWD_FTP=$3
 PWD_MYSQL=$4
-DOMAIN=`echo $VHOST | sed -E 's/([^\.]*\.)*([^\.]*\.[^\.]*)$/\2/'`
-VHOST_ONDOMAIN=`echo $VHOST | sed -E 's/(\.[^\.]*)$//'`
 if [ ! -d "$VHOSTS_DIR/$VHOST" ]; then
 	mkdir -p "$VHOSTS_DIR/$VHOST" || exit_with_error "ERROR CREATING account.txt FOR VHOST: '$VHOST'"
 fi
+[ -e  "$VHOSTS_DIR/$VHOST/account.txt" ] && exit_with_error "FILE ACCOUNT already exists"
 ( cat "../templates/create-account.txt.tpl" \
     | sed -E "s/\\{\\\$HOSTNAME\\}/$HOSTNAME/g" \
-    | sed -E "s/\\{\\\$DOMAIN\\}/$DOMAIN/g" \
     | sed -E "s/\\{\\\$VHOST\\}/$VHOST/g" \
     | sed -E "s;\\{\\\$VHOST_DIR\\};$VHOST_DIR;g" \
-    | sed -E "s/\\{\\\$VHOST_ONDOMAIN\\}/$VHOST_ONDOMAIN/g" \
-    | sed -E "s/\\{\\\$MY_DOMAIN\\}/$MY_DOMAIN/g" \
     | sed -E "s/\\{\\\$USER\\}/$USER/g" \
     | sed -E "s/\\{\\\$GROUP\\}/$WWW_GROUP/g" \
     | sed -E "s/\\{\\\$GID\\}/$WWW_GID/g" \
