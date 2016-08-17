@@ -87,7 +87,7 @@ fi
 while [ "x$2" != "x" ]; do
         VHOST_ALIAS=$2
 	VHOST_ALIAS_DOMAIN="$(get_domain $VHOST_ALIAS)"
-	if [ "x$DEVEL_DOMAIN" != 'x' -a "x$DOMAIN" != "x$VHOST_ALIAS_DOMAIN" ]; then
+	if [ "x$DEVEL_DOMAIN" != 'x' -a "x$DEVEL_DOMAIN" != "x$VHOST_ALIAS_DOMAIN" ]; then
 		VHOST_ALIAS_HOSTNAME="$(change_1st_level_domain $VHOST_ALIAS $DEVEL_DOMAIN)"
 		echo "DEVELOPMENT DOMAIN change '$VHOST_ALIAS' in '$VHOST_ALIAS_HOSTNAME'"
 	else

@@ -1,5 +1,5 @@
 # ######################### #
-# VIRTUALHOST SSL FOR {$VHOST}
+# VIRTUALHOST SSL FOR {$VHOST_HOSTNAME}
 # ######################### #
 
 <VirtualHost *:443>
@@ -32,9 +32,9 @@
 	LogLevel warn
 	CustomLog {$VHOSTS_DIR}/{$VHOST}/{$HTTPLOGS_DIR}/access.log combined
 	SSLEngine on
-	SSLCertificateFile    /usr/local/etc/letsencrypt/live/{$VHOST}/cert.pem
-	SSLCertificateKeyFile /usr/local/etc/letsencrypt/live/{$VHOST}/privkey.pem
-	SSLCertificateChainFile /usr/local/etc/letsencrypt/live/{VHOST}/fullchain.pem
+	SSLCertificateFile    /usr/local/etc/letsencrypt/live/{$VHOST_HOSTNAME}/cert.pem
+	SSLCertificateKeyFile /usr/local/etc/letsencrypt/live/{$VHOST_HOSTNAME}/privkey.pem
+	SSLCertificateChainFile /usr/local/etc/letsencrypt/live/{$VHOST_HOSTNAME}/fullchain.pem
 	
 	<FilesMatch "\.(cgi|shtml|phtml|php)$">
 	   SSLOptions +StdEnvVars
