@@ -8,7 +8,7 @@
         compress
         delaycompress
         notifempty
-        create 640 {$USER} adm
+        create 640 {$USER} {$WWW_GROUP}
         sharedscripts
         postrotate
                 /usr/local/etc/rc.d/apache24 reload > /dev/null

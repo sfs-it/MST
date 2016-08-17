@@ -18,7 +18,7 @@ if [ -s "$SETTINGS_FILE" ]; then
 	VHOSTS_DIR="$(sh "$SETTINGS_FILE" VHOSTS_DIR)"
 	APACHE_VERSION="$(sh "$SETTINGS_FILE" APACHE_VERSION)"
 	[ "x$APACHE_VERSION" != 'xapache22' -a "x$APACHE_VERSION" != 'xapache24' ] && APACHE_VERSION='apache22'
-
+	WWW_GROUP="$(sh "$SETTINGS_FILE" WWW_GROUP)"
 fi
 PWD_SRC="$(pwd)"
 cd $(dirname $0) 
@@ -47,7 +47,8 @@ USER="$(cat "$VHOST_ACCOUNTFILE" | grep 'USER:' | sed 's/^USER:\s*//' | sed 's/^
 ( cat "$LOGROTATE_TEMPLATE" \
 	| sed -E "s#\\{\\\$VHOSTS_DIR\\}#$VHOSTS_DIR#g" \
 	| sed -E "s#\\{\\\$VHOST\\}#$VHOST#g" \
-    | sed -E "s#\\{\\\$USER\\}#$USER#g" \
+	| sed -E "s#\\{\\\$USER\\}#$USER#g" \
+	| sed -E "s#\\{\\\$WWW_GROUP\\}#$WWW_GROUP#g" \
 	> "$LOGROTATE_DIR/$APACHE_VERSION-vhost-$VHOST.conf") || exit_with_error "ERROR: saving '$APACHE_VERSION-vhost-$VHOST.conf'"
 cd "$PWD_SRC"
 exit 0
