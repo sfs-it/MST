@@ -97,7 +97,7 @@ while [ "x$2" != "x" ]; do
 			HOST_ALIAS="$(get_host $VHOST_ALIAS)"
                         SERVER_ALIASES="$SERVER_ALIASES\tServerAlias $VHOST_ALIAS\n"
 			echo "ADD HOSTNAME '$VHOST_ALIAS' to Server Aliases"
-                        if [ ${#VHOST_ALIAS} -gt 4 -a "x$HOST_ALIAS" = 'xwww.' ]; then
+                        if [ ${#VHOST_ALIAS} -gt 4 -a "x$HOST_ALIAS" = 'xwww' ]; then
 				ALIAS_DOMAIN="$(get_domain $VHOST_ALIAS)"
                                 PRESENCE_CHECK=$(printf "$SERVER_ALIASES" | grep "ServerAlias $ALIAS_DOMAIN")
                                 if [ "x$ALIAS_DOMAIN" != "x" -a "x$PRESENCE_CHECK" = "x" ]; then
