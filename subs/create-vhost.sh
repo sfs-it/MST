@@ -73,11 +73,11 @@ DOMAIN="$(get_domain $VHOST)"
 if [ "x$DEVEL_DOMAIN" != 'x' -a "x$DOMAIN" != "x$DEVEL_DOMAIN" ]; then
 	VHOST_HOSTNAME="$(change_1st_level_domain $VHOST $DEVEL_DOMAIN)"
 	echo "DEVELOPMENT DOMAIN change '$VHOST' in '$VHOST_HOSTNAME'"
+	DOMAIN="$(get_domain $VHOST_HOSTNAME)"
 else
 	VHOST_HOSTNAME=$VHOST
 fi
 HOST="$(get_host $VHOST)"
-DOMAIN="$(get_domain $VHOST_HOSTNAME)"
 if [ "x$DOMAIN" != "x" -a \( "x$HOST" = "xwww" \) ]; then
         SERVER_ALIASES="\tServerAlias $DOMAIN\n"
 	echo "ADD DOMAIN '$DOMAIN' to Server Aliases"
@@ -85,24 +85,20 @@ else
         SERVER_ALIASES=""
 fi
 while [ "x$2" != "x" ]; do
-        VHOST_ALIAS=$2
-	VHOST_ALIAS_DOMAIN="$(get_domain $VHOST_ALIAS)"
-	if [ "x$DEVEL_DOMAIN" != 'x' -a "x$DEVEL_DOMAIN" != "x$VHOST_ALIAS_DOMAIN" ]; then
-		VHOST_ALIAS_HOSTNAME="$(change_1st_level_domain $VHOST_ALIAS $DEVEL_DOMAIN)"
-		echo "DEVELOPMENT DOMAIN change '$VHOST_ALIAS' in '$VHOST_ALIAS_HOSTNAME'"
-	else
-		VHOST_ALIAS_HOSTNAME=$VHOST_ALIAS
-	fi
-	HOST="$(get_host $VHOST_ALIAS)"
-	ALIAS_DOMAIN="$(get_domain $VHOST_ALIAS_HOSTNAME)"
-
-        if [ "x$VHOST_ALIAS_HOSTNAME" != "x$VHOST_HOSTNAME" ]; then
-                PRESENCE_CHECK=$(printf "$SERVER_ALIASES" | grep "ServerAlias $VHOST_ALIAS_HOSTNAME")
+        if [ "x$DEVEL_DOMAIN" != 'x' -a "x$DOMAIN" != "x$DEVEL_DOMAIN" ]; then
+                VHOST_ALIAS="$(change_1st_level_domain $2 $DEVEL_DOMAIN)"
+                echo "DEVELOPMENT DOMAIN change '$2' in '$VHOST_ALIAS'"
+        else
+                VHOST_ALIAS=$2
+        fi
+        if [ "x$VHOST_ALIAS" != "x$VHOST_HOSTNAME" ]; then
+                PRESENCE_CHECK=$(printf "$SERVER_ALIASES" | grep "ServerAlias $VHOST_ALIAS")
                 if [ "x$PRESENCE_CHECK" = "x" ]; then
-			HOST_ALIAS="$(get_host $VHOST_HOSTNAME_ALIAS)"
-                        SERVER_ALIASES="$SERVER_ALIASES\tServerAlias $VHOST_ALIAS_HOSTNAME\n"
-			echo "ADD HOSTNAME '$VHOST_ALIAS_HOSTNAME' to Server Aliases"
-                        if [ ${#VHOST_ALIAS_HOSTNAME} -gt 4 -a "x$HOST_ALIAS" = 'xwww.' ]; then
+			HOST_ALIAS="$(get_host $VHOST_ALIAS)"
+                        SERVER_ALIASES="$SERVER_ALIASES\tServerAlias $VHOST_ALIAS\n"
+			echo "ADD HOSTNAME '$VHOST_ALIAS' to Server Aliases"
+                        if [ ${#VHOST_ALIAS} -gt 4 -a "x$HOST_ALIAS" = 'xwww.' ]; then
+				ALIAS_DOMAIN="$(get_domain $VHOST_ALIAS)"
                                 PRESENCE_CHECK=$(printf "$SERVER_ALIASES" | grep "ServerAlias $ALIAS_DOMAIN")
                                 if [ "x$ALIAS_DOMAIN" != "x" -a "x$PRESENCE_CHECK" = "x" ]; then
                                         SERVER_ALIASES="$SERVER_ALIASES\tServerAlias $ALIAS_DOMAIN\n"

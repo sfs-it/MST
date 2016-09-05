@@ -22,7 +22,7 @@ if [ -s "$SETTINGS_FILE" ]; then
         VHOSTS_DIR="$(sh "$SETTINGS_FILE" VHOSTS_DIR)"
         HTTPDOCS_DIR="$(sh "$SETTINGS_FILE" HTTPDOCS_DIR)"
         HTTPLOGS_DIR="$(sh "$SETTINGS_FILE" HTTPLOGS_DIR)"
-	MY_DOMAIN="$(sh "$SETTINGS_FILE" MY_DOMAIN)"
+	DEVEL_DOMAIN="$(sh "$SETTINGS_FILE" DEVEL_DOMAIN)"
 fi
 PWD_SRC="$(pwd)"
 cd $(dirname $0) 
@@ -40,6 +40,18 @@ get_domain(){
 	echo $1 | sed -E 's/[^\.]*\.(.*)$/\1/g'
 }
 
+get_1st_level_domain(){
+        if [ "x$1" != 'x' ]; then
+                echo $1 | sed -E 's/([^\.]*\.)*(.*)$/\2/g'
+        fi
+}
+
+change_1st_level_domain(){
+        if [ "x$1" != 'x' -a "x$2" != 'x' ]; then
+                echo $1 | sed -E "s/(([^\.]*\.)*)(.*)\$/\1$2/g"
+        fi
+}
+
 [ "x$1" = 'x' ] && exit_with_error "$SYNTAX : 'VHOST' needed";
 VHOST=$1
 
@@ -49,9 +61,16 @@ USER=$(cat $VHOST_ACCOUNTFILE | grep 'USER:' | sed 's/^USER:\s*//' | sed 's/^[[:
 ADMIN_EMAIL=$(cat $VHOST_ACCOUNTFILE | grep 'ADMIN_EMAIL:' | sed 's/^ADMIN_EMAIL:\s*//' | sed 's/^[[:blank:]]*//g')
 VHOST_ONDOMAIN=$(echo $VHOST | sed -E 's/(\.[^\.]*)$//' | sed 's/^[[:blank:]]*//g')
 
-VHOSTs_SSL=$VHOST
-CERTBOT_PARAMS=" -d $VHOST"
 DOMAIN="$( get_domain $VHOST )"
+if [ "x$DEVEL_DOMAIN" != 'x' -a "x$DOMAIN" != "x$DEVEL_DOMAIN" ]; then
+        VHOST_HOSTNAME="$(change_1st_level_domain $VHOST $DEVEL_DOMAIN)"
+        echo "DEVELOPMENT DOMAIN change '$VHOST' in '$VHOST_HOSTNAME'"
+	DOMAIN="$(get_domain $VHOST_HOSTNAME)"
+else
+        VHOST_HOSTNAME=$VHOST
+fi
+VHOSTs_SSL=$VHOST_HOSTNAME
+CERTBOT_PARAMS=" -d $VHOST_HOSTNAME"
 if [ "x$DOMAIN" != "x" -a \( "x$( get_host $VHOST )" = "xwww" \) ]; then
 	VHOSTs_SSL="$VHOSTs_SSL,$DOMAIN"
 	SERVER_ALIASES="\tServerAlias $DOMAIN\n"
@@ -60,7 +79,12 @@ else
 	SERVER_ALIASES=""
 fi
 while [ "x$2" != "x" ]; do
-	VHOST_ALIAS=$2
+	if [ "x$DEVEL_DOMAIN" != 'x' -a "x$DOMAIN" != "x$DEVEL_DOMAIN" ]; then
+		VHOST_ALIAS="$(change_1st_level_domain $2 $DEVEL_DOMAIN)"
+		echo "DEVELOPMENT DOMAIN change '$2' in '$VHOST_ALIAS'"
+	else
+		VHOST_ALIAS=$2
+	fi
 	if [ "x$VHOST_ALIAS" != "x$VHOST" ]; then
 		PRESENCE_CHECK=$(printf "$SERVER_ALIASES" | grep "ServerAlias $VHOST_ALIAS")
 		if [ "x$PRESENCE_CHECK" = "x" ]; then
@@ -82,16 +106,15 @@ while [ "x$2" != "x" ]; do
 	shift
 done
 echo 'CREATE SSL CERTIFICATES'
-certbot certonly --webroot -w "$VHOSTS_DIR/$VHOST/$HTTPDOCS_DIR" $CERTBOT_PARAMS || exit_with_error "ERROR: creating CERTIFICATES FOR '$VHOST'"
+echo certbot certonly --webroot -w "$VHOSTS_DIR/$VHOST/$HTTPDOCS_DIR" $CERTBOT_PARAMS || exit_with_error "ERROR: creating CERTIFICATES FOR '$VHOST'"
 echo 'CREATE VHOST HTTP CONFIGURATION'
 SERVER_ALIASES=$(printf "$SERVER_ALIASES" | tr '\n' '\r')
 if [ "$( uname )" = 'FreeBSD' ]; then
 	VHOST_CONFIG_DIR="/usr/local/etc/$APACHE_VERSION/Vhosts"
 	( cat "../templates/$APACHE_VERSION.vhost:ssl.conf.tpl" \
-		| sed -E "s#\\{\\\$VHOST_HOSTNAME\\}#$VHOST#g" \
 		| sed -E "s#\\{\\\$VHOST\\}#$VHOST#g" \
+		| sed -E "s#\\{\\\$VHOST_HOSTNAME\\}#$VHOST_HOSTNAME#g" \
 		| sed -E "s#\\{\\\$DOMAIN\\}#$DOMAIN#g" \
-		| sed -E "s#\\{\\\$MY_DOMAIN\\}#$MY_DOMAIN#g" \
 		| sed -E "s#\\{\\\$ADMIN_EMAIL\\}#$ADMIN_EMAIL#g" \
 		| sed -E "s#\\{\\\$VHOSTS_DIR\\}#$VHOSTS_DIR#g" \
 		| sed -E "s#\\{\\\$HTTPDOCS_DIR\\}#$HTTPDOCS_DIR#g" \
@@ -108,8 +131,8 @@ elif [ "$( uname )" = 'Linux' ]; then
 	VHOST_CONFIG_ENABLED_DIR='/etc/apache2/sites-enabled'
 	( cat "../templates/$APACHE_VERSION.vhost:ssl.conf.tpl" \
 		| sed -E "s#\\{\\\$VHOST\\}#$VHOST#g" \
+		| sed -E "s#\\{\\\$VHOST_HOSTNAME\\}#$VHOST_HOSTNAME#g" \
 		| sed -E "s#\\{\\\$DOMAIN\\}#$DOMAIN#g" \
-		| sed -E "s#\\{\\\$MY_DOMAIN\\}#$MY_DOMAIN#g" \
 		| sed -E "s#\\{\\\$ADMIN_EMAIL\\}#$ADMIN_EMAIL#g" \
 		| sed -E "s#\\{\\\$VHOSTS_DIR\\}#$VHOSTS_DIR#g" \
 		| sed -E "s#\\{\\\$HTTPDOCS_DIR\\}#$HTTPDOCS_DIR#g" \
