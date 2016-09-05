@@ -106,7 +106,7 @@ while [ "x$2" != "x" ]; do
 	shift
 done
 echo 'CREATE SSL CERTIFICATES'
-echo certbot certonly --webroot -w "$VHOSTS_DIR/$VHOST/$HTTPDOCS_DIR" $CERTBOT_PARAMS || exit_with_error "ERROR: creating CERTIFICATES FOR '$VHOST'"
+certbot certonly --webroot -w "$VHOSTS_DIR/$VHOST/$HTTPDOCS_DIR" $CERTBOT_PARAMS || exit_with_error "ERROR: creating CERTIFICATES FOR '$VHOST'"
 echo 'CREATE VHOST HTTP CONFIGURATION'
 SERVER_ALIASES=$(printf "$SERVER_ALIASES" | tr '\n' '\r')
 if [ "$( uname )" = 'FreeBSD' ]; then
