@@ -17,6 +17,8 @@ test -s "/root/SFSit_MST.conf.sh" && SETTINGS_FILE="/root/SFSit_MST.conf.sh"
 if [ -s "$SETTINGS_FILE" ]; then
 	HOSTNAME="$(sh "$SETTINGS_FILE" HOSTNAME)"
 	test "x$HOSTNAME" = "x" && HOSTNAME="$(hostname)"
+	PUBLIC_IP="$(sh "$SETTINGS_FILE" PUBLIC_IP | tr '[:lower:]' '[:upper:]')"
+	test "x$PUBLIC_IP" = "x" && PUBLIC_IP="NONE"
 	HOST_EMAIL="$(sh "$SETTINGS_FILE" HOST_EMAIL)"
 	ADMIN_EMAIL="$(sh "$SETTINGS_FILE" ADMIN_EMAIL)"
 	VHOSTS_DIR="$(sh "$SETTINGS_FILE" VHOSTS_DIR)"
@@ -49,6 +51,7 @@ fi
 [ -e  "$VHOSTS_DIR/$VHOST/account.txt" ] && exit_with_error "FILE ACCOUNT already exists"
 ( cat "../templates/create-account.txt.tpl" \
     | sed -E "s/\\{\\\$HOSTNAME\\}/$HOSTNAME/g" \
+    | sed -E "s/\\{\\\$PUBLIC_IP\\}/$PUBLIC_IP/g" \
     | sed -E "s/\\{\\\$VHOST\\}/$VHOST/g" \
     | sed -E "s;\\{\\\$VHOST_DIR\\};$VHOST_DIR;g" \
     | sed -E "s/\\{\\\$USER\\}/$USER/g" \

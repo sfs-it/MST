@@ -3,6 +3,9 @@
 
 # SYSTEM SETTINGS
 HOSTNAME='yourhost.fqdn.local'		# YOUR FQDN hostname
+PUBLIC_IP='NONE'			# PUBLIC IP OF YOUR SERVER (SET 'NONE' if
+					# YOU HAVENT ONE or 'xxx.xxx.xxx.xxx' with
+					# YOUR PUBLIC IP)
 VHOSTS_DIR='/home/vhosts'		# WHERE VHOST ARE STORED
 HTTPDOCS_DIR='httpdocs'			# VHOST httpdocs directory
 HTTPLOGS_DIR='logs'			# VHOST httplogs directory

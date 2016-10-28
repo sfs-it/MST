@@ -14,8 +14,10 @@ SYNTAX="$BASESCRIPT VHOST USER [PWD_FTP [PWD_MYSQL [HOST_EMAIL [ADMIN_EMAIL [GRI
 SETTINGS_FILE="/etc/SFSit_MST.conf.sh"
 test -s "/root/SFSit_MST.conf.sh" && SETTINGS_FILE="/root/SFSit_MST.conf.sh"
 if [ -s "$SETTINGS_FILE" ]; then
-        HOSTNAME="$(sh "$SETTINGS_FILE" HOSTNAME)"
+        HOSTNAME="$(sh "$SETTINGS_FILE" HOSTNAME | tr '[:lower:]' '[:upper:]')"
         test "x$HOSTNAME" = "x" && HOSTNAME="$(hostname)"
+        PUBLIC_IP="$(sh "$SETTINGS_FILE" PUBLIC_IP | tr '[:lower:]' '[:upper:]')"
+        test "x$PUBLIC_IP" = "x" && PUBLIC_IP="NONE"
         VHOSTS_DIR="$(sh "$SETTINGS_FILE" VHOSTS_DIR)"
         HOST_EMAIL="$(sh "$SETTINGS_FILE" ADMIN_EMAIL)"
         ADMIN_EMAIL="$(sh "$SETTINGS_FILE" ADMIN_EMAIL)"
@@ -36,7 +38,6 @@ else
 	echo "NO CONFIG FOUND"
 	exit 1
 fi
-
 PWD_SRC="$(pwd)"
 cd $(dirname $0) 
 exit_with_error(){
@@ -89,11 +90,6 @@ echo "CREATE '$USER' account"
 sh ./subs/create-user.sh "$VHOST" || exit_with_error "ERROR: CREATING USER '$USER'"
 echo "CREATE $VHOST in $VHOSTS_DIR of $HOSTNAME for $USER with ftp password '$PWD_FTP' and mysql password: '$PWD_MYSQL'"
 sh ./subs/create-vhost.sh "$VHOST" $VHOST_ALIASES ||exit_with_error "ERROR: CREATING VHOST '$VHOST'"
-if [ "x$HTTPS_ENABLED" = "xYES" ]; then
-    sh ./subs/create-vhost-ssl.sh "$VHOST" $VHOST_ALIASES ||exit_with_error "ERROR: CREATING VHOST SSL '$VHOST'"
-else
-	echo "** HTTPS VHOST config is disabled, to enable add \"HTTPS_ENABLED='YES'\" to your $SETTINGS_FILE"
-fi
 echo "vhost '$VHOST' created"
 if [ "x$MYSQL_ENABLED" = "xYES" ]; then
 	echo "CREATE $VHOST DATABASE (named $USER)"
@@ -118,6 +114,17 @@ if [ "x$LOGROTATE_ENABLED" = "xYES" ]; then
 	sh ./subs/create-logrotate.sh "$VHOST" || exit_with_error "ERROR: CREATING LOG ROTATE FOR $VHOST"
 else
 	echo "** LOGROTATE is disabled, to enable add \"LOGROTATE_ENABLED='YES'\" to your $SETTINGS_FILE"
+fi
+if [ "x$HTTPS_ENABLED" = "xYES" ]; then
+	sh ./subs/create-vhost-ssl.sh "$VHOST" $VHOST_ALIASES ||exit_with_error "ERROR: CREATING VHOST SSL '$VHOST'"
+else
+	echo "** HTTPS VHOST config is disabled, to enable add \"HTTPS_ENABLED='YES'\" to your $SETTINGS_FILE"
+fi
+echo "vhost ssl '$VHOST' created"
+if [ "x$PUBLIC_IP" = "xNONE" ]; then
+	echo "** PUBLIC_IP config is disabled, to enable add \"PUBLIC_IP='xxx.xxx.xxx.xxx'\" with your public ip to your $SETTINGS_FILE"
+else
+	sh ./subs/add-vhost-to-hosts.sh "$VHOST" $VHOST_ALIASES ||exit_with_error "ERROR: ADDING $VHOST and $VHOST_ALIASES to /etc/hosts"
 fi
 echo "SEND email to $ADMIN_EMAIL"
 sh ./subs/create-sendmail.sh "$VHOST" || exit_with_error  "ERROR: SENDING REPORT"
