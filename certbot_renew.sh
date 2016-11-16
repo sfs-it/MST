@@ -32,7 +32,7 @@ umask 022
 SETTINGS_FILE="/etc/SFSit_MST.conf.sh"
 test -s "/root/SFSit_MST.conf.sh" && SETTINGS_FILE="/root/SFSit_MST.conf.sh"
 if [ -s "$SETTINGS_FILE" ]; then
-	MAIL_HOSTNAME="$(sh "$SETTINGS_FILE" MAIL_HOSTNAME)"
+	HOST_EMAIL="$(sh "$SETTINGS_FILE" HOST_EMAIL)"
 	ADMIN_EMAIL="$(sh "$SETTINGS_FILE" ADMIN_EMAIL)"
 fi
 
@@ -56,9 +56,9 @@ mkdir /tmp/$MFILE
 certbot renew 2>&1 > /tmp/$MFILE/mailbody.txt
 printf "\n\n\n==== LOG ===\n"  >> /tmp/$MFILE/mailbody.txt
 cat '/var/log/letsencrypt/letsencrypt.log' >> /tmp/$MFILE/mailbody.txt
-( echo "$MAIL_HOSTNAME: CERTBOT RENEW LOG $( date )" > "/tmp/$MFILE/head.txt" ) || exit_with_error "ERROR: CANNOT CREATE HEADER FILE '/tmp/$MFILE/head.txt'"
+( echo "$HOST_EMAIL: CERTBOT RENEW LOG $( date )" > "/tmp/$MFILE/head.txt" ) || exit_with_error "ERROR: CANNOT CREATE HEADER FILE '/tmp/$MFILE/head.txt'"
 if [  "x$ADMIN_EMAIL" != "x" -a -x $MTA ]; then
-	( mst_sendmail "$MAIL_HOSTNAME" "$ADMIN_EMAIL" "/tmp/$MFILE/head.txt" "/tmp/$MFILE/mailbody.txt" ) || exit_with_error "ERROR: sending $ADMIN_EMAIL" 
+	( mst_sendmail "$HOST_EMAIL" "$ADMIN_EMAIL" "/tmp/$MFILE/head.txt" "/tmp/$MFILE/mailbody.txt" ) || exit_with_error "ERROR: sending $ADMIN_EMAIL" 
 else
 	cat "/tmp/$MFILE/mailbody.txt" || exit_with_error "ERROR: CANNOT CAT FILES  '/tmp/$MFILE'"
 fi
