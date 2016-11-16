@@ -31,7 +31,6 @@ if [ -s "$SETTINGS_FILE" ]; then
 	ADMIN_EMAIL="$(sh "$SETTINGS_FILE" ADMIN_EMAIL)"
 	VHOSTS_DIR="$(sh "$SETTINGS_FILE" VHOSTS_DIR)"
 	HTTPDOCS_DIR="$(sh "$SETTINGS_FILE" HTTPDOCS_DIR)"
-	MAIL_HOSTNAME="$(sh "$SETTINGS_FILE" MAIL_HOSTNAME)"
 else
 	echo "NO CONFIG SET COPY SFSit_MST.conf.sh.orig /etc/SFSit_MST.conf.sh or /root/SFSit_MST.conf.sh and set local variables"
 	exit 1
@@ -83,7 +82,7 @@ else
 	STARTDATE="$(date -d "$NDAYS day ago" "+%H:%M %d/%m/%Y")"
 	ENDDATE="$(date "+%H:%M %d/%m/%Y")"
 fi
-( echo "$MAIL_HOSTNAME: MODIFIED FILES FROM $STARTDATE TO $ENDDATE" > "/tmp/$MFILE.head" ) || exit_with_error "ERROR: CANNOT CREATE HEADER FILE '/tmp/$MFILE.head'"
+( echo "$HOST_EMAIL: MODIFIED FILES FROM $STARTDATE TO $ENDDATE" > "/tmp/$MFILE.head" ) || exit_with_error "ERROR: CANNOT CREATE HEADER FILE '/tmp/$MFILE.head'"
 if cd "$VHOSTS_DIR"; then
 	for VHOST_ACCOUNTFILE in $(ls -1 $VHOSTS_DIR/$VHOST/account.txt); do
 		VHOST_PATH="$(echo $VHOST_ACCOUNTFILE | sed -E 's/\/account.txt$//')"
@@ -97,7 +96,7 @@ if cd "$VHOSTS_DIR"; then
 			   [ "x$VHOST_ADMIN_EMAIL" != "x" -a "x$VHOST_ADMIN_EMAIL" != "x$ADMIN_EMAIL" ]; then
 				test "x$VHOST_HOST_EMAIL" == "x" && VHOST_HOST_EMAIL="$HOST_EMAIL"
 				test "x$VHOST_ADMIN_EMAIL" == "x" && VHOST_ADMIN_EMAIL="$ADMIN_EMAIL"
-				( echo "$MAIL_HOSTNAME: vhost '$VHOST_HOSTNAME' MODIFIED FILES FROM $STARTDATE TO $ENDDATE" > "/tmp/$MFILE-$VHOST_HOSTNAME.head" ) || exit_with_error "ERROR: CANNOT CREATE SINGLE VHOST FILE '/tmp/$MFILE-$VHOST_HOSTNAME.head'"
+				( echo "$HOST_EMAIL: vhost '$VHOST_HOSTNAME' MODIFIED FILES FROM $STARTDATE TO $ENDDATE" > "/tmp/$MFILE-$VHOST_HOSTNAME.head" ) || exit_with_error "ERROR: CANNOT CREATE SINGLE VHOST FILE '/tmp/$MFILE-$VHOST_HOSTNAME.head'"
 				( cat "$VHOST_PATH/$MFILE.ls" | sed "s#**$VHOSTS_DIR/#VHOST:#" > "/tmp/$MFILE-$VHOST_HOSTNAME.ls" ) || exit_with_error "ERROR: CANNOT CREATE SINGLE VHOST FILE '/tmp/$MFILE-$VHOST_HOSTNAME.ls'"
 				( cat "/tmp/$MFILE-$VHOST_HOSTNAME.head" "/tmp/$MFILE-$VHOST_HOSTNAME.ls" > "/tmp/$MFILE-$VHOST_HOSTNAME.maillog" ) || exit_with_error "ERROR: CANNOT CREATE SINGLE VHOST FILE '/tmp/$MFILE-$VHOST_HOSTNAME.maillog'"
 				( mst_sendmail "$VHOST_HOST_EMAIL" "$VHOST_ADMIN_EMAIL" "/tmp/$MFILE-$VHOST_HOSTNAME.head" "/tmp/$MFILE-$VHOST_HOSTNAME.maillog" ) || exit_with_error "ERROR: CANNOT SEND EMAIL TO SINGLE VHOST '$VHOST_ADMIN_EMAIL' FROM '$VHOST_HOST_EMAIL'"

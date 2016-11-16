@@ -23,7 +23,7 @@ DEVEL_DOMAIN=""				# USE DEVEL DOMAIN, set it for development
 					# into DEVEL_DOMAIN dns, you can use https
 					# certbot for SSL
 # MAILING SYSTEM
-MAIL_HOSTNAME='ACCOUNT@GMAIL'		# MAIL USED BY CHK_FILES for sending modified
+HOSTNAME_EMAIL='ACCOUNT@GMAIL'		# MAIL USED BY CHK_FILES for sending modified
 					# files on system
 # ENABLE OR DISABLE SINGLE PARTS
 HTTPS_ENABLES='YES'			# ENABLE HTTP CONFIG GENERATION FOR VHOSTS
