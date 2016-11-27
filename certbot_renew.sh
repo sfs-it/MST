@@ -12,6 +12,7 @@
 
 BASESCRIPT="$(basename $0)"
 DIRSCRIPT="$(dirname $0)"
+certbot="/usr/local/bin/certbot"
 if [ -s "$DIRSCRIPT/SFSit_MST.conf.sh" ]; then
 	. "$( readlink -f "$DIRSCRIPT/SFSit_MST.conf.sh" )"
 fi
@@ -53,7 +54,7 @@ fi
 EXECTIMEMARK="$(date "+%Y%m%d%H%M")"
 MFILE="certbot_renew_log_$EXECTIMEMARK"
 mkdir /tmp/$MFILE
-certbot renew 2>&1 > /tmp/$MFILE/mailbody.txt
+$certbot renew 2>&1 > /tmp/$MFILE/mailbody.txt
 printf "\n\n\n==== LOG ===\n"  >> /tmp/$MFILE/mailbody.txt
 cat '/var/log/letsencrypt/letsencrypt.log' >> /tmp/$MFILE/mailbody.txt
 ( echo "$HOST_EMAIL: CERTBOT RENEW LOG $( date )" > "/tmp/$MFILE/head.txt" ) || exit_with_error "ERROR: CANNOT CREATE HEADER FILE '/tmp/$MFILE/head.txt'"
