@@ -55,13 +55,15 @@ EXECTIMEMARK="$(date "+%Y%m%d%H%M")"
 MFILE="certbot_renew_log_$EXECTIMEMARK"
 mkdir /tmp/$MFILE
 $certbot renew 2>&1 > /tmp/$MFILE/mailbody.txt
-printf "\n\n\n==== LOG ===\n"  >> /tmp/$MFILE/mailbody.txt
-cat '/var/log/letsencrypt/letsencrypt.log' >> /tmp/$MFILE/mailbody.txt
-( echo "$HOST_EMAIL: CERTBOT RENEW LOG $( date )" > "/tmp/$MFILE/head.txt" ) || exit_with_error "ERROR: CANNOT CREATE HEADER FILE '/tmp/$MFILE/head.txt'"
-if [  "x$ADMIN_EMAIL" != "x" -a -x $MTA ]; then
-	( mst_sendmail "$HOST_EMAIL" "$ADMIN_EMAIL" "/tmp/$MFILE/head.txt" "/tmp/$MFILE/mailbody.txt" ) || exit_with_error "ERROR: sending $ADMIN_EMAIL" 
-else
-	cat "/tmp/$MFILE/mailbody.txt" || exit_with_error "ERROR: CANNOT CAT FILES  '/tmp/$MFILE'"
+if [ "x$(cat /tmp/$MFILE/mailbody.txt | grep "No renewals were attempted.")" != "x" ]; then
+	printf "\n\n\n==== LOG ===\n"  >> /tmp/$MFILE/mailbody.txt
+	cat '/var/log/letsencrypt/letsencrypt.log' >> /tmp/$MFILE/mailbody.txt
+	( echo "$HOST_EMAIL: CERTBOT RENEW LOG $( date )" > "/tmp/$MFILE/head.txt" ) || exit_with_error "ERROR: CANNOT CREATE HEADER FILE '/tmp/$MFILE/head.txt'"
+	if [  "x$ADMIN_EMAIL" != "x" -a -x $MTA ]; then
+		( mst_sendmail "$HOST_EMAIL" "$ADMIN_EMAIL" "/tmp/$MFILE/head.txt" "/tmp/$MFILE/mailbody.txt" ) || exit_with_error "ERROR: sending $ADMIN_EMAIL" 
+	else
+		cat "/tmp/$MFILE/mailbody.txt" || exit_with_error "ERROR: CANNOT CAT FILES  '/tmp/$MFILE'"
+	fi
 fi
 rm -R "/tmp/$MFILE" 
 cd "$PWD"
