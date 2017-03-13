@@ -1,4 +1,4 @@
-#~/bin/sh#
+#!/bin/sh#
 # SFS.it Maintenance Server Tools 
 # BSD style KISS scripts
 #
@@ -72,16 +72,15 @@ else
 	param_aliases=0	
 fi
 PWD_FTP="$3"
-[ "x$3" = 'x' -o $param_aliases -le 3 ] && PWD_FTP=$(perl $PATHSCRIPT/subs/pwd_generator.pl 8)
+[ "x$3" = 'x' -o \( $param_aliases -ne 0 -a $param_aliases -le 3 \) ] && PWD_FTP=$(perl $PATHSCRIPT/subs/pwd_generator.pl 8)
 PWD_MYSQL="$4"
-[ "x$4" = 'x' -o $param_aliases -le 4 ] && PWD_MYSQL=$(perl $PATHSCRIPT/subs/pwd_generator.pl 16)
+[ "x$4" = 'x' -o \( $param_aliases -ne 0 -a $param_aliases -le 4 \) ] && PWD_MYSQL=$(perl $PATHSCRIPT/subs/pwd_generator.pl 16)
 [ "x$5" != 'x' -a $param_aliases -gt 5 ] && ADMIN_EMAIL="$5"
 [ "x$6" != 'x' -a $param_aliases -gt 6 ] && HOST_EMAIL="$6"
 [ "x$7" != 'x' -a $param_aliases -gt 7 ] && GRIVE_EMAIL="$7"
 [ "x$8" != 'x' -a $param_aliases -gt 8 ] && GRIVE_DIR="$8"
 [ "x$9" != 'x' -a $param_aliases -gt 9 ] && GRIVE_SUBDIR_BACKUPS="$9"
 DOMAIN="$(echo "$VHOST" | sed -E 's/([^\.]*\.)*([^\.]*\.[^\.]*)$/\2/')"
-
 VHOST_SFS="$(echo "$VHOST" | sed -E 's/(\.[^\.]*)$//')"
 echo "CREATE account.txt file"
 sh ./subs/create-account.txt.sh "$VHOST" "$USER" "$PWD_FTP" "$PWD_MYSQL" "$HOST_EMAIL" "$ADMIN_EMAIL" || exit_with_error  "ERROR: CREATING account.txt"
