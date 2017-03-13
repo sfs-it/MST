@@ -2,7 +2,7 @@
 # VIRTUALHOST FOR {$VHOST}
 # ######################### #
 
-<VirtualHost *:80>
+<VirtualHost {$SERVER_IP}:{$APACHE_HTTP}>
 	ServerName {$VHOST_HOSTNAME}
 {$SERVER_ALIASES}
 	ServerAdmin {$ADMIN_EMAIL}
@@ -27,10 +27,10 @@
                 Require all granted
         </Directory>
 
-	ErrorLog {$VHOSTS_DIR}/{$VHOST}/{$HTTPLOGS_DIR}/error.log
+	ErrorLog {$VHOSTS_DIR}/{$VHOST}/{$HTTPLOGS_DIR}/error-apache.log
 	# Possible values include: debug, info, notice, warn, error, crit, alert, emerg.
 	LogLevel warn
-	CustomLog {$VHOSTS_DIR}/{$VHOST}/{$HTTPLOGS_DIR}/access.log combined
+	CustomLog {$VHOSTS_DIR}/{$VHOST}/{$HTTPLOGS_DIR}/access-apache.log combined
 </VirtualHost>
 
 # ################################################################################## #

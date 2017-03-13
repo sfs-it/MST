@@ -116,7 +116,7 @@ else
 	echo "** LOGROTATE is disabled, to enable add \"LOGROTATE_ENABLED='YES'\" to your $SETTINGS_FILE"
 fi
 if [ "x$HTTPS_ENABLED" = "xYES" ]; then
-	sh ./subs/create-vhost-ssl.sh "$VHOST" $VHOST_ALIASES ||exit_with_error "ERROR: CREATING VHOST SSL '$VHOST'"
+	sh ./subs/create-vhost:ssl.sh "$VHOST" $VHOST_ALIASES ||exit_with_error "ERROR: CREATING VHOST SSL '$VHOST'"
 else
 	echo "** HTTPS VHOST config is disabled, to enable add \"HTTPS_ENABLED='YES'\" to your $SETTINGS_FILE"
 fi

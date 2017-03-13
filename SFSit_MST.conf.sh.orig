@@ -6,7 +6,9 @@ HOSTNAME='yourhost.fqdn.local'		# YOUR FQDN hostname
 PUBLIC_IP='NONE'			# PUBLIC IP OF YOUR SERVER (SET 'NONE' if
 					# YOU HAVENT ONE or 'xxx.xxx.xxx.xxx' with
 					# YOUR PUBLIC IP)
-VHOSTS_DIR='/home/vhosts'		# WHERE VHOST ARE STORED
+SERVER_IP='127.0.0.1'			# SERVER IP USED FOR VHOSTS 
+					# YOU CAN USE LOCALHOST
+VHOSTS_DIR='/usr/home/vhosts'		# WHERE VHOST ARE STORED
 HTTPDOCS_DIR='httpdocs'			# VHOST httpdocs directory
 HTTPLOGS_DIR='logs'			# VHOST httplogs directory
 WWW_USER='www-data'			# www (on freebsd)
@@ -22,17 +24,28 @@ DEVEL_DOMAIN=""				# USE DEVEL DOMAIN, set it for development
 					# if you use a FQDN, and set the correct hosts
 					# into DEVEL_DOMAIN dns, you can use https
 					# certbot for SSL
+# WEB SERVER
+WEBSERVER="apache"			# SWITCH KIND OF WEBSERVER 
+					# you can choose in "apache,nginx,nginx+apache"
+APACHE_VERSION="apache24"		# SELECT APACHE VERSION in "apache22,apache24"
+APACHE_HTTP="80"			# APACHE HTTP PORT (80 or 8080 in nginx+apache)
+APACHE_HTTPS="433"			# APACHE HTTPS PORT (443 or 8433 in nginx+apache)
+
 # MAILING SYSTEM
 HOSTNAME_EMAIL='ACCOUNT@GMAIL'		# MAIL USED BY CHK_FILES for sending modified
 					# files on system
+
 # ENABLE OR DISABLE SINGLE PARTS
 HTTPS_ENABLES='YES'			# ENABLE HTTP CONFIG GENERATION FOR VHOSTS
 SAMBA_ENABLES='YES'			# ENABLE SAMBA SHARING FOR HOST
+
 # MYSQL
 MYSQL_ENABLES='YES'			# ENABLE MYSQL DATABASE CREATION FOR NEW HOSTS
 MYSQL_ROOT_PWD='ROOTPWD'		# MySQL root password
+
 # LOGROTATE
 LOGROTATE_ENABLED='YES'			# ENABLE LOGROTATE FOR VHOST LOGS
+
 #BACKUP SETTINGS
 APACHE_CONF='SAVE'			# SAVE APACHE CONFIGURATION ON CREATE VHOST
 SAMBA_CONF='SAVE'			# SAVE SAMBA CONFIGURATION ON CREATE VHOST
@@ -57,7 +70,6 @@ LORG_OPT=' -i combined -o html -d phpids -d chars  -a all -c all -b all -t 10 -v
 LORG_SAVE_REPORT_ON_HTTPDOC_SLOGS="false"
 LORG_SPLITTED="false"
 LORG_ATTACH_REPORT="false"
-
 
 if [ "x$(basename $0)" = "xSFSit_MST.conf.sh" ]
         key="$(echo "$1"|tr '[:lower:]' '[:upper:]')"

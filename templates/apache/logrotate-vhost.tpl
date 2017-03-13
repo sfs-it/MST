@@ -11,7 +11,7 @@
         create 640 {$USER} {$WWW_GROUP}
         sharedscripts
         postrotate
-                /usr/local/etc/rc.d/apache24 reload > /dev/null
+                [ ! -f /var/run/httpd.pid ] || kill -HUP `cat /var/run/httpd.pid` > /dev/null
         endscript
 }
 

@@ -16,9 +16,10 @@ SETTINGS_FILE="/etc/SFSit_MST.conf.sh"
 test -s "/root/SFSit_MST.conf.sh" && SETTINGS_FILE="/root/SFSit_MST.conf.sh"
 if [ -s "$SETTINGS_FILE" ]; then
 	VHOSTS_DIR="$(sh "$SETTINGS_FILE" VHOSTS_DIR)"
-	APACHE_VERSION="$(sh "$SETTINGS_FILE" APACHE_VERSION)"
-	[ "x$APACHE_VERSION" != 'xapache22' -a "x$APACHE_VERSION" != 'xapache24' ] && APACHE_VERSION='apache22'
 	WWW_GROUP="$(sh "$SETTINGS_FILE" WWW_GROUP)"
+        WEBSERVER="$(sh "$SETTINGS_FILE" WEBSERVER)"
+        [ "x$WEBSERVER" != 'xapache' -a  "x$WEBSERVER" != 'xnginx' -a "x$WEBSERVER" != 'xnginx+apache' ] && WEBSERVER='apache'
+
 fi
 PWD_SRC="$(pwd)"
 cd $(dirname $0) 
@@ -32,11 +33,10 @@ exit_with_error(){
 
 if [ "$( uname )" = 'FreeBSD' ]; then
 	LOGROTATE_DIR='/usr/local/etc/logrotate.d'
-	LOGROTATE_TEMPLATE="../templates/freebsd-logrotate-$APACHE_VERSION-vhost.tpl"
 elif [ "$( uname )" = 'Linux' ]; then
 	LOGROTATE_DIR='/etc/logrotate.d'
-	LOGROTATE_TEMPLATE="../templates/linux-logrotate-$APACHE_VERSION-vhost.tpl"
 fi
+LOGROTATE_TEMPLATE="../templates/$WEBSERVER/logrotate-vhost.tpl"
 
 
 VHOST=$1

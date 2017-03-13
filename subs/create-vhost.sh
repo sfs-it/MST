@@ -17,8 +17,21 @@ test -s "/root/SFSit_MST.conf.sh" && SETTINGS_FILE="/root/SFSit_MST.conf.sh"
 if [ -s "$SETTINGS_FILE" ]; then
 	HOSTNAME="$(sh "$SETTINGS_FILE" HOSTNAME)"
 	test "x$HOSTNAME" = "x" && HOSTNAME=$(hostname)
+	SERVER_IP="$(sh "$SETTINGS_FILE" SERVER_IP)"
+	[ "x$SERVER_IP" = 'x' ] && SERVER_IP='127.0.0.1'
+	WEBSERVER="$(sh "$SETTINGS_FILE" WEBSERVER)"
+	[ "x$WEBSERVER" != 'xapache' -a  "x$WEBSERVER" != 'xnginx' -a "x$WEBSERVER" != 'xnginx+apache' ] && WEBSERVER='apache'
 	APACHE_VERSION="$(sh "$SETTINGS_FILE" APACHE_VERSION)"
 	[ "x$APACHE_VERSION" != 'xapache22' -a "x$APACHE_VERSION" != 'xapache24' ] && APACHE_VERSION='apache24'
+	APACHE_HTTP="$(sh "$SETTINGS_FILE" APACHE_HTTP)"
+	APACHE_HTTPS="$(sh "$SETTINGS_FILE" APACHE_HTTPS)"
+	if [ "x$WEBSERVER" = 'xapache' ]; then
+		[ "x$APACHE_HTTP" = 'x' ] && APACHE_HTTPS='80'
+		[ "x$APACHE_HTTPS" = 'x' ] && APACHE_HTTPS='443'
+	else
+		[ "x$APACHE_HTTP" = 'x' ] && APACHE_HTTPS='8080'
+		[ "x$APACHE_HTTPS" = 'x' ] && APACHE_HTTPS='8443'
+	fi
 	VHOSTS_DIR="$(sh "$SETTINGS_FILE" VHOSTS_DIR)"
 	HTTPDOCS_DIR="$(sh "$SETTINGS_FILE" HTTPDOCS_DIR)"
 	HTTPLOGS_DIR="$(sh "$SETTINGS_FILE" HTTPLOGS_DIR)"
@@ -80,9 +93,11 @@ fi
 HOST="$(get_host $VHOST)"
 if [ "x$DOMAIN" != "x" -a \( "x$HOST" = "xwww" \) ]; then
         SERVER_ALIASES="\tServerAlias $DOMAIN\n"
+	VHOST_HOSTNAME_ALIASES=" $DOMAIN"
 	echo "ADD DOMAIN '$DOMAIN' to Server Aliases"
 else
         SERVER_ALIASES=""
+	VHOST_HOSTNAME_ALIASES=""
 fi
 while [ "x$2" != "x" ]; do
         if [ "x$DEVEL_DOMAIN" != 'x' -a "x$DOMAIN" != "x$DEVEL_DOMAIN" ]; then
@@ -96,12 +111,14 @@ while [ "x$2" != "x" ]; do
                 if [ "x$PRESENCE_CHECK" = "x" ]; then
 			HOST_ALIAS="$(get_host $VHOST_ALIAS)"
                         SERVER_ALIASES="$SERVER_ALIASES\tServerAlias $VHOST_ALIAS\n"
+			VHOST_HOSTNAME_ALIASES="$VHOST_HOSTNAME_ALIASES $VHOST_ALIAS"
 			echo "ADD HOSTNAME '$VHOST_ALIAS' to Server Aliases"
                         if [ ${#VHOST_ALIAS} -gt 4 -a "x$HOST_ALIAS" = 'xwww' ]; then
 				ALIAS_DOMAIN="$(get_domain $VHOST_ALIAS)"
                                 PRESENCE_CHECK=$(printf "$SERVER_ALIASES" | grep "ServerAlias $ALIAS_DOMAIN")
                                 if [ "x$ALIAS_DOMAIN" != "x" -a "x$PRESENCE_CHECK" = "x" ]; then
                                         SERVER_ALIASES="$SERVER_ALIASES\tServerAlias $ALIAS_DOMAIN\n"
+					VHOST_HOSTNAME_ALIASES="$VHOST_HOSTNAME_ALIASES $ALIAS_DOMAIN"
 					echo "ADD DOMAIN '$ALIAS_DOMAIN' to Server Aliases"
                                 fi
                         fi
@@ -110,44 +127,93 @@ while [ "x$2" != "x" ]; do
         shift
 done
 
+nginx_template(){
+	 cat "../templates/$WEBSERVER/nginx-vhost.conf.tpl" \
+		| sed -E "s#\\{\\\$SERVER_IP\\}#$SERVER_IP#g" \
+		| sed -E "s#\\{\\\$VHOST\\}#$VHOST#g" \
+		| sed -E "s#\\{\\\$VHOST_HOSTNAME\\}#$VHOST_HOSTNAME#g" \
+		| sed -E "s#\\{\\\$VHOST_HOSTNAME_ALIASES\\}#$VHOST_HOSTNAME_ALIASES#g" \
+		| sed -E "s#\\{\\\$ADMIN_EMAIL\\}#$ADMIN_EMAIL#g" \
+		| sed -E "s#\\{\\\$VHOSTS_DIR\\}#$VHOSTS_DIR#g" \
+                | sed -E "s#\\{\\\$HTTPDOCS_DIR\\}#$HTTPDOCS_DIR#g" \
+                | sed -E "s#\\{\\\$HTTPLOGS_DIR\\}#$HTTPLOGS_DIR#g" \
+		| sed -E "s#\\{\\\$HOSTNAME\\}#$HOSTNAME#g" \
+		| sed -E "s#\\{\\\$USER\\}#$USER#g" \
+		| sed -E "s#\\{\\\$VHOST_ONDOMAIN\\}#$VHOST_ONDOMAIN#g" \
+		| sed -E "s#\\{\\\$SERVER_ALIASES\\}#$SERVER_ALIASES#g" \
+		| sed -E "s#\\{\\\$APACHE_HTTP\\}#$APACHE_HTTP#g" \
+		| sed -E "s#\\{\\\$APACHE_HTTPS\\}#$APACHE_HTTPS#g" \
+		| tr '\r' '\n' 
+}
+
+apache_template(){
+	 cat "../templates/$WEBSERVER/$APACHE_VERSION-vhost.conf.tpl" \
+		| sed -E "s#\\{\\\$SERVER_IP\\}#$SERVER_IP#g" \
+		| sed -E "s#\\{\\\$VHOST\\}#$VHOST#g" \
+		| sed -E "s#\\{\\\$VHOST_HOSTNAME\\}#$VHOST_HOSTNAME#g" \
+		| sed -E "s#\\{\\\$ADMIN_EMAIL\\}#$ADMIN_EMAIL#g" \
+		| sed -E "s#\\{\\\$VHOSTS_DIR\\}#$VHOSTS_DIR#g" \
+                | sed -E "s#\\{\\\$HTTPDOCS_DIR\\}#$HTTPDOCS_DIR#g" \
+                | sed -E "s#\\{\\\$HTTPLOGS_DIR\\}#$HTTPLOGS_DIR#g" \
+		| sed -E "s#\\{\\\$HOSTNAME\\}#$HOSTNAME#g" \
+		| sed -E "s#\\{\\\$USER\\}#$USER#g" \
+		| sed -E "s#\\{\\\$VHOST_ONDOMAIN\\}#$VHOST_ONDOMAIN#g" \
+		| sed -E "s#\\{\\\$SERVER_ALIASES\\}#$SERVER_ALIASES#g" \
+		| sed -E "s#\\{\\\$APACHE_HTTP\\}#$APACHE_HTTP#g" \
+		| sed -E "s#\\{\\\$APACHE_HTTPS\\}#$APACHE_HTTPS#g" \
+		| tr '\r' '\n' 
+}
 
 echo 'CREATE VHOST HTTP CONFIGURATION'
 SERVER_ALIASES=$(printf "$SERVER_ALIASES" | tr '\n' '\r')
-if [ "$( uname )" = 'FreeBSD' ]; then
-	VHOST_CONFIG_DIR="/usr/local/etc/$APACHE_VERSION/Vhosts"
-	( cat "../templates/$APACHE_VERSION.vhost.conf.tpl" \
-		| sed -E "s#\\{\\\$VHOST\\}#$VHOST#g" \
-		| sed -E "s#\\{\\\$VHOST_HOSTNAME\\}#$VHOST_HOSTNAME#g" \
-		| sed -E "s#\\{\\\$ADMIN_EMAIL\\}#$ADMIN_EMAIL#g" \
-		| sed -E "s#\\{\\\$VHOSTS_DIR\\}#$VHOSTS_DIR#g" \
-                | sed -E "s#\\{\\\$HTTPDOCS_DIR\\}#$HTTPDOCS_DIR#g" \
-                | sed -E "s#\\{\\\$HTTPLOGS_DIR\\}#$HTTPLOGS_DIR#g" \
-		| sed -E "s#\\{\\\$HOSTNAME\\}#$HOSTNAME#g" \
-		| sed -E "s#\\{\\\$USER\\}#$USER#g" \
-		| sed -E "s#\\{\\\$VHOST_ONDOMAIN\\}#$VHOST_ONDOMAIN#g" \
-		| sed -E "s#\\{\\\$SERVER_ALIASES\\}#$SERVER_ALIASES#g" \
-		| tr '\r' '\n' \
-		> "$VHOST_CONFIG_DIR/$VHOST.conf" )  || exit_with_error "ERROR: creating '$VHOST_CONFIG_DIR/$VHOST.conf'"
-	service $APACHE_VERSION restart || exit_with_error "ERROR: restating $APACHE_VERSION"
-elif [ "$( uname )" = 'Linux' ]; then
-	VHOST_CONFIG_DIR='/etc/apache2/sites-available'
-	VHOST_CONFIG_ENABLED_DIR='/etc/apache2/sites-enabled'
-	( cat "../templates/$APACHE_VERSION.vhost.conf.tpl" \
-		| sed -E "s#\\{\\\$VHOST\\}#$VHOST#g" \
-		| sed -E "s#\\{\\\$VHOST_HOSTNAME\\}#$VHOST_HOSTNAME#g" \
-		| sed -E "s#\\{\\\$ADMIN_EMAIL\\}#$ADMIN_EMAIL#g" \
-		| sed -E "s#\\{\\\$VHOSTS_DIR\\}#$VHOSTS_DIR#g" \
-                | sed -E "s#\\{\\\$HTTPDOCS_DIR\\}#$HTTPDOCS_DIR#g" \
-                | sed -E "s#\\{\\\$HTTPLOGS_DIR\\}#$HTTPLOGS_DIR#g" \
-		| sed -E "s#\\{\\\$HOSTNAME\\}#$HOSTNAME#g" \
-		| sed -E "s#\\{\\\$USER\\}#$USER#g" \
-		| sed -E "s#\\{\\\$VHOST_ONDOMAIN\\}#$VHOST_ONDOMAIN#g" \
-		| sed -E "s#\\{\\\$SERVER_ALIASES\\}#$SERVER_ALIASES#g" \
-		| tr '\r' '\n' \
-		> "$VHOST_CONFIG_DIR/$VHOST" )  || exit_with_error "ERROR: creating '$VHOST_CONFIG_DIR/$VHOST.conf'"
-	ln -fs "$VHOST_CONFIG_DIR/$VHOST.conf" "$VHOST_CONFIG_ENABLED_DIR/$VHOST.conf" || \
-		exit_with_error "ERROR: linking '$VHOST_CONFIG_DIR/$VHOST.conf' to '$VHOST_CONFIG_ENABLED_DIR/$VHOST.conf'"
-	service apache2 restart || exit_with_error "ERROR: restating apache2"
+if [ "x$WEBSERVER" = 'xapache' ]; then
+	if [ "$( uname )" = 'FreeBSD' ]; then
+		VHOST_CONFIG_DIR="/usr/local/etc/$APACHE_VERSION/Vhosts"
+		( apache_template > "$VHOST_CONFIG_DIR/$VHOST.conf" ) || exit_with_error "ERROR: creating '$VHOST_CONFIG_DIR/$VHOST.conf'"
+		service $APACHE_VERSION restart || exit_with_error "ERROR: restating $APACHE_VERSION"
+	elif [ "$( uname )" = 'Linux' ]; then
+		VHOST_CONFIG_DIR='/etc/apache2/sites-available'
+		VHOST_CONFIG_ENABLED_DIR='/etc/apache2/sites-enabled'
+		( apache_template > "$VHOST_CONFIG_DIR/$VHOST" )  || exit_with_error "ERROR: creating '$VHOST_CONFIG_DIR/$VHOST.conf'"
+		ln -fs "$VHOST_CONFIG_DIR/$VHOST.conf" "$VHOST_CONFIG_ENABLED_DIR/$VHOST.conf" || \
+			exit_with_error "ERROR: linking '$VHOST_CONFIG_DIR/$VHOST.conf' to '$VHOST_CONFIG_ENABLED_DIR/$VHOST.conf'"
+		service apache2 restart || exit_with_error "ERROR: restating apache2"
+	fi
+elif [ "x$WEBSERVER" = 'xnginx' ]; then
+	if [ "$( uname )" = 'FreeBSD' ]; then
+		VHOST_CONFIG_DIR="/usr/local/etc/nginx/Vhosts"
+		( nginx_template > "$VHOST_CONFIG_DIR/$VHOST.conf" ) || exit_with_error "ERROR: creating '$VHOST_CONFIG_DIR/$VHOST.conf'"
+		service nginx restart || exit_with_error "ERROR: restating nginx"
+	elif [ "$( uname )" = 'Linux' ]; then
+		VHOST_CONFIG_DIR='/etc/nginx/sites-available'
+		VHOST_CONFIG_ENABLED_DIR='/etc/nginx/sites-enabled'
+		( nginx_template > "$VHOST_CONFIG_DIR/$VHOST" )  || exit_with_error "ERROR: creating '$VHOST_CONFIG_DIR/$VHOST.conf'"
+		ln -fs "$VHOST_CONFIG_DIR/$VHOST.conf" "$VHOST_CONFIG_ENABLED_DIR/$VHOST.conf" || \
+			exit_with_error "ERROR: linking '$VHOST_CONFIG_DIR/$VHOST.conf' to '$VHOST_CONFIG_ENABLED_DIR/$VHOST.conf'"
+		service nginx restart || exit_with_error "ERROR: restating nginx"
+	fi
+elif [ "x$WEBSERVER" = 'xnginx+apache' ]; then
+	if [ "$( uname )" = 'FreeBSD' ]; then
+		VHOST_CONFIG_DIR="/usr/local/etc/nginx/Vhosts"
+		( nginx_template > "$VHOST_CONFIG_DIR/$VHOST.conf" ) || exit_with_error "ERROR: creating '$VHOST_CONFIG_DIR/$VHOST.conf'"
+		service nginx restart || exit_with_error "ERROR: restating nginx"
+		VHOST_CONFIG_DIR="/usr/local/etc/$APACHE_VERSION/Vhosts"
+		( apache_template > "$VHOST_CONFIG_DIR/$VHOST.conf" ) || exit_with_error "ERROR: creating '$VHOST_CONFIG_DIR/$VHOST.conf'"
+		service $APACHE_VERSION restart || exit_with_error "ERROR: restating $APACHE_VERSION"
+	elif [ "$( uname )" = 'Linux' ]; then
+		VHOST_CONFIG_DIR='/etc/nginx/sites-available'
+		VHOST_CONFIG_ENABLED_DIR='/etc/nginx/sites-enabled'
+		( nginx_template > "$VHOST_CONFIG_DIR/$VHOST" )  || exit_with_error "ERROR: creating '$VHOST_CONFIG_DIR/$VHOST.conf'"
+		ln -fs "$VHOST_CONFIG_DIR/$VHOST.conf" "$VHOST_CONFIG_ENABLED_DIR/$VHOST.conf" || \
+			exit_with_error "ERROR: linking '$VHOST_CONFIG_DIR/$VHOST.conf' to '$VHOST_CONFIG_ENABLED_DIR/$VHOST.conf'"
+		service nginx restart || exit_with_error "ERROR: restating nginx"
+		VHOST_CONFIG_DIR='/etc/apache2/sites-available'
+		VHOST_CONFIG_ENABLED_DIR='/etc/apache2/sites-enabled'
+		( apache_template > "$VHOST_CONFIG_DIR/$VHOST" )  || exit_with_error "ERROR: creating '$VHOST_CONFIG_DIR/$VHOST.conf'"
+		ln -fs "$VHOST_CONFIG_DIR/$VHOST.conf" "$VHOST_CONFIG_ENABLED_DIR/$VHOST.conf" || \
+			exit_with_error "ERROR: linking '$VHOST_CONFIG_DIR/$VHOST.conf' to '$VHOST_CONFIG_ENABLED_DIR/$VHOST.conf'"
+		service apache2 restart || exit_with_error "ERROR: restating apache2"
+	fi
 fi
 echo 'UPDATE account.txt'
 ( printf "\n\nHTTP VHOST:\n\tServerName: $VHOST\n$SERVER_ALIASES" \
