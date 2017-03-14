@@ -11,6 +11,7 @@
         create 640 {$USER} {$WWW_GROUP}
         sharedscripts
         postrotate
+		[ ! -f /var/run/nginx.pid ] || kill -USR1 `cat /var/run/nginx.pid` > /dev/null
                 [ ! -f /var/run/httpd.pid ] || kill -HUP `cat /var/run/httpd.pid` > /dev/null
         endscript
 }
