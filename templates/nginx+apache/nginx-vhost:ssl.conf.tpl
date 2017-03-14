@@ -2,7 +2,7 @@
 server {
         listen {$SERVER_IP}:443 ssl;
         server_name {$VHOST_HOSTNAME}{$VHOST_HOSTNAME_ALIASES};
-        error_log  /usr/home/www/www.sfs.it/logs/error-nginx.log error;
+        error_log  /usr/home/www/{$VHOST}/logs/error-nginx.log error;
         ssl_certificate     /usr/local/etc/letsencrypt/live/{$VHOST}/cert.pem;
         ssl_certificate_key /usr/local/etc/letsencrypt/live/{$VHOST}/privkey.pem;
         ssl_trusted_certificate /usr/local/etc/letsencrypt/live/{$VHOST}/fullchain.pem;

@@ -15,14 +15,28 @@ SYNTAX="$BASESCRIPT VHOST OTHER_HTTPS_HOST OTHER_HTTPS_HOST OTHER_HTTPS_HOST OTH
 SETTINGS_FILE="/etc/SFSit_MST.conf.sh"
 test -s "/root/SFSit_MST.conf.sh" && SETTINGS_FILE="/root/SFSit_MST.conf.sh"
 if [ -s "$SETTINGS_FILE" ]; then
-	HOSTNAME="$(sh "$SETTINGS_FILE" HOSTNAME)"
-	test "x$HOSTNAME" = "x" && HOSTNAME=$(hostname)
-	APACHE_VERSION="$(sh "$SETTINGS_FILE" APACHE_VERSION)"
-	[ "x$APACHE_VERSION" != 'xapache22' -a "x$APACHE_VERSION" != 'xapache24' ] && APACHE_VERSION='apache24'
+        HOSTNAME="$(sh "$SETTINGS_FILE" HOSTNAME)"
+        test "x$HOSTNAME" = "x" && HOSTNAME=$(hostname)
+        SERVER_IP="$(sh "$SETTINGS_FILE" SERVER_IP)"
+        [ "x$SERVER_IP" = 'x' ] && SERVER_IP='127.0.0.1'
+        WEBSERVER="$(sh "$SETTINGS_FILE" WEBSERVER)"
+        [ "x$WEBSERVER" != 'xapache' -a  "x$WEBSERVER" != 'xnginx' -a "x$WEBSERVER" != 'xnginx+apache' ] && WEBSERVER='apache'
+        APACHE_VERSION="$(sh "$SETTINGS_FILE" APACHE_VERSION)"
+        [ "x$APACHE_VERSION" != 'xapache22' -a "x$APACHE_VERSION" != 'xapache24' ] && APACHE_VERSION='apache24'
+        APACHE_HTTP="$(sh "$SETTINGS_FILE" APACHE_HTTP)"
+        APACHE_HTTPS="$(sh "$SETTINGS_FILE" APACHE_HTTPS)"
+        if [ "x$WEBSERVER" = 'xapache' ]; then
+                [ "x$APACHE_HTTP" = 'x' ] && APACHE_HTTPS='80'
+                [ "x$APACHE_HTTPS" = 'x' ] && APACHE_HTTPS='443'
+        else
+                [ "x$APACHE_HTTP" = 'x' ] && APACHE_HTTPS='8080'
+                [ "x$APACHE_HTTPS" = 'x' ] && APACHE_HTTPS='8443'
+        fi
         VHOSTS_DIR="$(sh "$SETTINGS_FILE" VHOSTS_DIR)"
         HTTPDOCS_DIR="$(sh "$SETTINGS_FILE" HTTPDOCS_DIR)"
         HTTPLOGS_DIR="$(sh "$SETTINGS_FILE" HTTPLOGS_DIR)"
-	DEVEL_DOMAIN="$(sh "$SETTINGS_FILE" DEVEL_DOMAIN)"
+        DEVEL_DOMAIN="$(sh "$SETTINGS_FILE" DEVEL_DOMAIN)"
+        WWW_GROUP="$(sh "$SETTINGS_FILE" WWW_GROUP)"
 fi
 PWD_SRC="$(pwd)"
 cd $(dirname $0) 
