@@ -49,6 +49,6 @@ USER="$(cat "$VHOST_ACCOUNTFILE" | grep 'USER:' | sed 's/^USER:\s*//' | sed 's/^
 	| sed -E "s#\\{\\\$VHOST\\}#$VHOST#g" \
 	| sed -E "s#\\{\\\$USER\\}#$USER#g" \
 	| sed -E "s#\\{\\\$WWW_GROUP\\}#$WWW_GROUP#g" \
-	> "$LOGROTATE_DIR/$APACHE_VERSION-vhost-$VHOST.conf") || exit_with_error "ERROR: saving '$APACHE_VERSION-vhost-$VHOST.conf'"
+	> "$LOGROTATE_DIR/vhost-$VHOST.conf") || exit_with_error "ERROR: saving 'vhost-$VHOST.conf'"
 cd "$PWD_SRC"
 exit 0
