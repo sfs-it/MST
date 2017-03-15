@@ -9,17 +9,21 @@ server {
         include /usr/local/etc/nginx/ssl_common.conf;
 
         location / {
+            root {$VHOSTS_DIR}/{$VHOST}/{$HTTPDOCS_DIR}
             proxy_pass https://{$VHOST_HOSTNAME}:{$APACHE_HTTPS};
             include /usr/local/etc/nginx/proxy.conf;
             # include /usr/local/etc/nginx/proxy_cache.conf;
+
             location ~* ^.+\.(jpeg|jpg|png|gif|bmp|ico|svg|tif|tiff|css|js|htm|html|ttf|otf|webp|woff|txt|csv|rtf|doc|docx|xls|xlsx|ppt|pptx|odf|odp|ods|odt|pdf|psd|ai|eot|eps|ps|zip|tar|tgz|gz|rar|bz2|7z|aac|m4a|mp3|mp4|ogg|wav|wma|3gp|avi|flv|m4v|mkv|mov|mp4|mpeg|mpg|wmv|exe|iso|dmg|swf)$ {
-                root {$VHOSTS_DIR}/{$VHOST}/{$HTTPDOCS_DIR}
                 access_log {$VHOSTS_DIR}/{$VHOST}/{$HTTPLOGS_DIR}/access-nginx.log main;
                 expires        max;
                 try_files      $uri @fallback;
             }
+
             location ~ /.well-known {
                 allow all;
+                access_log {$VHOSTS_DIR}/{$VHOST}/{$HTTPLOGS_DIR}/access-nginx.log main;
+                try_files $uri =404;
             }
         }
 

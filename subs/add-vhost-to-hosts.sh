@@ -17,6 +17,8 @@ test -s "/root/SFSit_MST.conf.sh" && SETTINGS_FILE="/root/SFSit_MST.conf.sh"
 if [ -s "$SETTINGS_FILE" ]; then
 	HOSTNAME="$(sh "$SETTINGS_FILE" HOSTNAME | tr '[:lower:]' '[:upper:]')"
 	test "x$HOSTNAME" = "x" && HOSTNAME=$(hostname)
+	SERVER_IP="$(sh "$SETTINGS_FILE" SERVER_IP | tr '[:lower:]' '[:upper:]')"
+	test "x$SERVER_IP" = "x" && SERVER_IP="127.0.0.1"
 	PUBLIC_IP="$(sh "$SETTINGS_FILE" PUBLIC_IP | tr '[:lower:]' '[:upper:]')"
 	test "x$PUBLIC_IP" = "x" && PUBLIC_IP="NONE"
 	APACHE_VERSION="$(sh "$SETTINGS_FILE" APACHE_VERSION)"
@@ -111,6 +113,6 @@ done
 
 
 echo 'ADD PUBLIC IP VHOST and ALIASES to /etc/hosts'
-printf "$PUBLIC_IP\t$VHOST_HOSTNAME$SERVER_ALIASES" >> /etc/hosts 
+printf "\n$PUBLIC_IP\t$VHOST_HOSTNAME$SERVER_ALIASES" >> /etc/hosts 
 cd "$PWD_SRC"
 exit 0
