@@ -78,10 +78,6 @@ change_1st_level_domain(){
 	fi
 }
 
-echo 'Copy standard vhost data to VHOST path'
-cp -rp ../templates/empty-vhost.dir/* "$VHOSTS_DIR/$VHOST/" || exit_with_error "ERROR: coping standard empty vhost to '$VHOSTS_DIR/$VHOST'"
-chown -R "$USER":"$WWW_GROUP" "$VHOSTS_DIR/$VHOST" || exit_with_error "ERROR: coping changing ownership of '$VHOSTS_DIR/$VHOST'"
-
 DOMAIN="$(get_domain $VHOST)"
 if [ "x$DEVEL_DOMAIN" != 'x' -a "x$DOMAIN" != "x$DEVEL_DOMAIN" ]; then
 	VHOST_HOSTNAME="$(change_1st_level_domain $VHOST $DEVEL_DOMAIN)"
@@ -197,9 +193,6 @@ elif [ "x$WEBSERVER" = 'xnginx+apache' ]; then
 		VHOST_CONFIG_DIR="/usr/local/etc/nginx/Vhosts"
 		( nginx_template > "$VHOST_CONFIG_DIR/$VHOST.conf" ) || exit_with_error "ERROR: creating '$VHOST_CONFIG_DIR/$VHOST.conf'"
 		service nginx restart || exit_with_error "ERROR: restating nginx"
-		VHOST_CONFIG_DIR="/usr/local/etc/$APACHE_VERSION/Vhosts"
-		( apache_template > "$VHOST_CONFIG_DIR/$VHOST.conf" ) || exit_with_error "ERROR: creating '$VHOST_CONFIG_DIR/$VHOST.conf'"
-		service $APACHE_VERSION restart || exit_with_error "ERROR: restating $APACHE_VERSION"
 	elif [ "$( uname )" = 'Linux' ]; then
 		VHOST_CONFIG_DIR='/etc/nginx/sites-available'
 		VHOST_CONFIG_ENABLED_DIR='/etc/nginx/sites-enabled'
