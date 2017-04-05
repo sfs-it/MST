@@ -3,8 +3,10 @@
 # ######################### #
 
 <VirtualHost {$SERVER_IP}:{$APACHE_HTTPS}>
-	ServerName {$VHOST_HOSTNAME}
+	ServerName  {$VHOST}.local
+	ServerAlias {$VHOST_HOSTNAME}
 {$SERVER_ALIASES}
+
 	ServerAdmin {$ADMIN_EMAIL}
 
 	DocumentRoot {$VHOSTS_DIR}/{$VHOST}/{$HTTPDOCS_DIR}

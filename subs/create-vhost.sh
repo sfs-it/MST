@@ -123,6 +123,10 @@ while [ "x$2" != "x" ]; do
         shift
 done
 
+echo 'Copy standard vhost data to VHOST path'
+cp -rp ../templates/empty-vhost.dir/* "$VHOSTS_DIR/$VHOST/" || exit_with_error "ERROR: coping standard empty vhost to '$VHOSTS_DIR/$VHOST'"
+chown -R "$USER":"$WWW_GROUP" "$VHOSTS_DIR/$VHOST" || exit_with_error "ERROR: coping changing ownership of '$VHOSTS_DIR/$VHOST'"
+echo 'CREATE VHOST HTTP CONFIGURATION'
 nginx_template(){
 	 cat "../templates/$WEBSERVER/nginx-vhost.conf.tpl" \
 		| sed -E "s#\\{\\\$SERVER_IP\\}#$SERVER_IP#g" \
@@ -160,53 +164,44 @@ apache_template(){
 		| tr '\r' '\n' 
 }
 
-echo 'CREATE VHOST HTTP CONFIGURATION'
-SERVER_ALIASES=$(printf "$SERVER_ALIASES" | tr '\n' '\r')
-if [ "x$WEBSERVER" = 'xapache' ]; then
+add_apache_config(){
+	echo 'add Apache config for vhost'
 	if [ "$( uname )" = 'FreeBSD' ]; then
 		VHOST_CONFIG_DIR="/usr/local/etc/$APACHE_VERSION/Vhosts"
 		( apache_template > "$VHOST_CONFIG_DIR/$VHOST.conf" ) || exit_with_error "ERROR: creating '$VHOST_CONFIG_DIR/$VHOST.conf'"
-		service $APACHE_VERSION restart || exit_with_error "ERROR: restating $APACHE_VERSION"
+		service $APACHE_VERSION restart  2>&1 > /dev/null || exit_with_error "ERROR: restating $APACHE_VERSION"
 	elif [ "$( uname )" = 'Linux' ]; then
 		VHOST_CONFIG_DIR='/etc/apache2/sites-available'
 		VHOST_CONFIG_ENABLED_DIR='/etc/apache2/sites-enabled'
 		( apache_template > "$VHOST_CONFIG_DIR/$VHOST" )  || exit_with_error "ERROR: creating '$VHOST_CONFIG_DIR/$VHOST.conf'"
 		ln -fs "$VHOST_CONFIG_DIR/$VHOST.conf" "$VHOST_CONFIG_ENABLED_DIR/$VHOST.conf" || \
 			exit_with_error "ERROR: linking '$VHOST_CONFIG_DIR/$VHOST.conf' to '$VHOST_CONFIG_ENABLED_DIR/$VHOST.conf'"
-		service apache2 restart || exit_with_error "ERROR: restating apache2"
+		service apache2 restart 2>&1 > /dev/null || exit_with_error "ERROR: restating apache2"
 	fi
+}
+add_nginx_config(){
+	echo 'add NGINX config for vhost'
+	if [ "$( uname )" = 'FreeBSD' ]; then
+		VHOST_CONFIG_DIR="/usr/local/etc/nginx/Vhosts"
+		( nginx_template > "$VHOST_CONFIG_DIR/$VHOST.conf" ) || exit_with_error "ERROR: creating '$VHOST_CONFIG_DIR/$VHOST.conf'"
+		service nginx restart  2>&1 > /dev/null || exit_with_error "ERROR: restating nginx"
+	elif [ "$( uname )" = 'Linux' ]; then
+		VHOST_CONFIG_DIR='/etc/nginx/sites-available'
+		VHOST_CONFIG_ENABLED_DIR='/etc/nginx/sites-enabled'
+		( nginx_template > "$VHOST_CONFIG_DIR/$VHOST" )  || exit_with_error "ERROR: creating '$VHOST_CONFIG_DIR/$VHOST.conf'"
+		ln -fs "$VHOST_CONFIG_DIR/$VHOST.conf" "$VHOST_CONFIG_ENABLED_DIR/$VHOST.conf" || \
+			exit_with_error "ERROR: linking '$VHOST_CONFIG_DIR/$VHOST.conf' to '$VHOST_CONFIG_ENABLED_DIR/$VHOST.conf'"
+		service nginx restart 2>&1 > /dev/null || exit_with_error "ERROR: restating nginx"
+	fi
+}
+SERVER_ALIASES=$(printf "$SERVER_ALIASES" | tr '\n' '\r')
+if [ "x$WEBSERVER" = 'xapache' ]; then
+	add_apache_config
 elif [ "x$WEBSERVER" = 'xnginx' ]; then
-	if [ "$( uname )" = 'FreeBSD' ]; then
-		VHOST_CONFIG_DIR="/usr/local/etc/nginx/Vhosts"
-		( nginx_template > "$VHOST_CONFIG_DIR/$VHOST.conf" ) || exit_with_error "ERROR: creating '$VHOST_CONFIG_DIR/$VHOST.conf'"
-		service nginx restart || exit_with_error "ERROR: restating nginx"
-	elif [ "$( uname )" = 'Linux' ]; then
-		VHOST_CONFIG_DIR='/etc/nginx/sites-available'
-		VHOST_CONFIG_ENABLED_DIR='/etc/nginx/sites-enabled'
-		( nginx_template > "$VHOST_CONFIG_DIR/$VHOST" )  || exit_with_error "ERROR: creating '$VHOST_CONFIG_DIR/$VHOST.conf'"
-		ln -fs "$VHOST_CONFIG_DIR/$VHOST.conf" "$VHOST_CONFIG_ENABLED_DIR/$VHOST.conf" || \
-			exit_with_error "ERROR: linking '$VHOST_CONFIG_DIR/$VHOST.conf' to '$VHOST_CONFIG_ENABLED_DIR/$VHOST.conf'"
-		service nginx restart || exit_with_error "ERROR: restating nginx"
-	fi
+	add_nginx_config
 elif [ "x$WEBSERVER" = 'xnginx+apache' ]; then
-	if [ "$( uname )" = 'FreeBSD' ]; then
-		VHOST_CONFIG_DIR="/usr/local/etc/nginx/Vhosts"
-		( nginx_template > "$VHOST_CONFIG_DIR/$VHOST.conf" ) || exit_with_error "ERROR: creating '$VHOST_CONFIG_DIR/$VHOST.conf'"
-		service nginx restart || exit_with_error "ERROR: restating nginx"
-	elif [ "$( uname )" = 'Linux' ]; then
-		VHOST_CONFIG_DIR='/etc/nginx/sites-available'
-		VHOST_CONFIG_ENABLED_DIR='/etc/nginx/sites-enabled'
-		( nginx_template > "$VHOST_CONFIG_DIR/$VHOST" )  || exit_with_error "ERROR: creating '$VHOST_CONFIG_DIR/$VHOST.conf'"
-		ln -fs "$VHOST_CONFIG_DIR/$VHOST.conf" "$VHOST_CONFIG_ENABLED_DIR/$VHOST.conf" || \
-			exit_with_error "ERROR: linking '$VHOST_CONFIG_DIR/$VHOST.conf' to '$VHOST_CONFIG_ENABLED_DIR/$VHOST.conf'"
-		service nginx restart || exit_with_error "ERROR: restating nginx"
-		VHOST_CONFIG_DIR='/etc/apache2/sites-available'
-		VHOST_CONFIG_ENABLED_DIR='/etc/apache2/sites-enabled'
-		( apache_template > "$VHOST_CONFIG_DIR/$VHOST" )  || exit_with_error "ERROR: creating '$VHOST_CONFIG_DIR/$VHOST.conf'"
-		ln -fs "$VHOST_CONFIG_DIR/$VHOST.conf" "$VHOST_CONFIG_ENABLED_DIR/$VHOST.conf" || \
-			exit_with_error "ERROR: linking '$VHOST_CONFIG_DIR/$VHOST.conf' to '$VHOST_CONFIG_ENABLED_DIR/$VHOST.conf'"
-		service apache2 restart || exit_with_error "ERROR: restating apache2"
-	fi
+	add_apache_config
+	add_nginx_config
 fi
 echo 'UPDATE account.txt'
 ( printf "\n\nHTTP VHOST:\n\tServerName: $VHOST\n$SERVER_ALIASES" \

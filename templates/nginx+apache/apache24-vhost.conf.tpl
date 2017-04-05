@@ -3,7 +3,8 @@
 # ######################### #
 
 <VirtualHost {$SERVER_IP}:{$APACHE_HTTP}>
-	ServerName {$VHOST_HOSTNAME}
+	ServerName  {$VHOST}.local
+	ServerAlias {$VHOST_HOSTNAME}
 {$SERVER_ALIASES}
 	ServerAdmin {$ADMIN_EMAIL}
 

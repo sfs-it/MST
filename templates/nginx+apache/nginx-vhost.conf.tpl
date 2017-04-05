@@ -1,13 +1,13 @@
 # nginx virtualhost for: {$VHOST}
 server {
         listen {$SERVER_IP}:80;
-        server_name  {$VHOST_HOSTNAME}{$VHOST_HOSTNAME_ALIASES};
+        server_name  {$VHOST}.local {$VHOST_HOSTNAME}{$VHOST_HOSTNAME_ALIASES};
         error_log  {$VHOSTS_DIR}/{$VHOST}/{$HTTPLOGS_DIR}/error-nginx.log error;
 
         location / {
             root {$VHOSTS_DIR}/{$VHOST}/{$HTTPDOCS_DIR};
 
-            proxy_pass http://{$VHOST_HOSTNAME}:{$APACHE_HTTP};
+            proxy_pass http://{$VHOST}.local:{$APACHE_HTTP};
             include /usr/local/etc/nginx/proxy.conf;
             # include /usr/local/etc/nginx/proxy_cache.conf;
 
@@ -25,7 +25,7 @@ server {
         }
 
         location @fallback {
-            proxy_pass http://{$VHOST_HOSTNAME}:{$APACHE_HTTP};
+            proxy_pass http://{$VHOST}.local:{$APACHE_HTTP};
             include /usr/local/etc/nginx/proxy.conf;
             # include /usr/local/etc/nginx/proxy_cache.conf;
         }
