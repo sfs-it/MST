@@ -86,12 +86,12 @@ else
         SERVER_ALIASES=""
 fi
 while [ "x$2" != "x" ]; do
-        if [ "x$DEVEL_DOMAIN" != 'x' -a "x$DOMAIN" != "x$DEVEL_DOMAIN" ]; then
-                VHOST_ALIAS="$(change_1st_level_domain $2 $DEVEL_DOMAIN)"
-                echo "DEVELOPMENT DOMAIN change '$2' in '$VHOST_ALIAS'"
-        else
+#        if [ "x$DEVEL_DOMAIN" != 'x' -a "x$DOMAIN" != "x$DEVEL_DOMAIN" ]; then
+#                VHOST_ALIAS="$(change_1st_level_domain $2 $DEVEL_DOMAIN)"
+#                echo "DEVELOPMENT DOMAIN change '$2' in '$VHOST_ALIAS'"
+#        else
                 VHOST_ALIAS=$2
-        fi
+#        fi
         if [ "x$VHOST_ALIAS" != "x$VHOST_HOSTNAME" ]; then
                 PRESENCE_CHECK=$(printf "$SERVER_ALIASES" | grep "ServerAlias $VHOST_ALIAS")
                 if [ "x$PRESENCE_CHECK" = "x" ]; then
@@ -113,6 +113,6 @@ done
 
 
 echo 'ADD PUBLIC IP VHOST and ALIASES to /etc/hosts'
-printf "\n## VHOST IPs ${VHOST} ##\n${SERVER_IP}\t${VHOST}.local\n${SERVER_IP}\t$VHOST_HOSTNAME$SERVER_ALIASES" >> /etc/hosts 
+printf "\n\n## VHOST IPs ${VHOST} ##\n${SERVER_IP}\t${VHOST}.local\n${SERVER_IP}\t$VHOST_HOSTNAME$SERVER_ALIASES" >> /etc/hosts 
 cd "$PWD_SRC"
 exit 0

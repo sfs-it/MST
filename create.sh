@@ -9,7 +9,7 @@
 # USAGE VHOST USER [PWD_FTP [PWD_MYSQL [ADMIN_EMAIL]]]
 BASESCRIPT="$(basename $0)"
 PATHSCRIPT="$(dirname $0)"
-SYNTAX="$BASESCRIPT VHOST USER [PWD_FTP [PWD_MYSQL [HOST_EMAIL [ADMIN_EMAIL [GRIVE_EMAIL [GRIVE_DIR [GRIVE_SUBDIR_BACKUPS]]]]]]][ -ALIASES ... VHOSTNAME ... VHOSTNAME ]" 
+SYNTAX="$BASESCRIPT VHOST USER [PWD_FTP [PWD_MYSQL [HOST_EMAIL [ADMIN_EMAIL [GRIVE_EMAIL [GRIVE_DIR [GRIVE_SUBDIR_BACKUPS]]]]]]][ -ALIAS ... VHOSTNAME ... VHOSTNAME ]" 
 
 SETTINGS_FILE="/etc/SFSit_MST.conf.sh"
 test -s "/root/SFSit_MST.conf.sh" && SETTINGS_FILE="/root/SFSit_MST.conf.sh"
@@ -54,7 +54,7 @@ id $USER 2>&1 > /dev/null
 param_aliases=3
 while [ $param_aliases -le $# ]; do
 	eval param='$'$param_aliases
-	if [ "x$(echo $param | tr '[:lower:]' '[:upper:]')" = 'x-ALIASES' ]; then
+	if [ "x$(echo $param | tr '[:lower:]' '[:upper:]')" = 'x-ALIAS' ]; then
 		break
 	fi
 	param_aliases=$(($param_aliases + 1))

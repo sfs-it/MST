@@ -2,7 +2,8 @@
 # VIRTUALHOST SSL FOR {$VHOST_HOSTNAME}
 # ######################### #
 
-<VirtualHost {$SERVER_IP}:{$APACHE_HTTPS}>
+#<VirtualHost {$SERVER_IP}:{$APACHE_HTTPS}>
+<VirtualHost *:{$APACHE_HTTPS}>
 	ServerName  {$VHOST}.local
 	ServerAlias {$VHOST_HOSTNAME}
 {$SERVER_ALIASES}

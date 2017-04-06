@@ -2,7 +2,8 @@
 # VIRTUALHOST FOR {$VHOST}
 # ######################### #
 
-<VirtualHost {$SERVER_IP}:{$APACHE_HTTP}>
+#<VirtualHost {$SERVER_IP}:{$APACHE_HTTP}>
+<VirtualHost *:{$APACHE_HTTP}>
 	ServerName  {$VHOST}.local
         ServerAlias {$VHOST_HOSTNAME}
 {$SERVER_ALIASES}
