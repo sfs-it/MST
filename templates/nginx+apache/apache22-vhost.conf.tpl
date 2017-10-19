@@ -2,9 +2,12 @@
 # VIRTUALHOST FOR {$VHOST}
 # ######################### #
 
-<VirtualHost {$SERVER_IP}:{$APACHE_HTTP}>
-	ServerName {$VHOST_HOSTNAME}
+#<VirtualHost {$SERVER_IP}:{$APACHE_HTTP}>
+<VirtualHost *:{$APACHE_HTTP}>
+	ServerName  {$VHOST}.local
+        ServerAlias {$VHOST_HOSTNAME}
 {$SERVER_ALIASES}
+
 	ServerAdmin {$ADMIN_EMAIL}
 
 	DocumentRoot {$VHOSTS_DIR}/{$VHOST}/{$HTTPDOCS_DIR}

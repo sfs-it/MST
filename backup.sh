@@ -20,8 +20,16 @@ if [ -s "$SETTINGS_FILE" ]; then
 	HTTPDOCS_DIR="$(sh "$SETTINGS_FILE" HTTPDOCS_DIR)"
 	ADMIN_EMAIL="$(sh "$SETTINGS_FILE" ADMIN_EMAIL)"
 	HOST_EMAIL="$(sh "$SETTINGS_FILE" HOST_EMAIL)"
+	APACHE_ENABLED="$(sh "$SETTINGS_FILE" APACHE_ENABLED)"
+	[ "x$APACHE_ENABLED" = "x" ] && APACHE_ENABLED='NO'
 	APACHE_CONF="$(sh "$SETTINGS_FILE" APACHE_CONF)"
 	[ "x$APACHE_CONF" = "x" ] && APACHE_CONF='SAVE'
+	NGINX_ENABLED="$(sh "$SETTINGS_FILE" NGINX_ENABLED)"
+	[ "x$NGINX_ENABLED" = "x" ] && NGINX_ENABLED='NO'
+	NGINX_CONF="$(sh "$SETTINGS_FILE" NGINX_CONF)"
+	[ "x$NGINX_CONF" = "x" ] && NGINX_CONF='SAVE'
+	SAMBA_ENABLED="$(sh "$SETTINGS_FILE" SAMBA_ENABLED)"
+	[ "x$SAMBA_ENABLED" = "x" ] && SAMBA_ENABLED='NO'
 	SAMBA_CONF="$(sh "$SETTINGS_FILE" SAMBA_CONF)"
 	[ "x$SAMBA_CONF" = "x" ] && SAMBA_CONF='SAVE'
 	GRIVE_EMAIL="$(sh "$SETTINGS_FILE" GRIVE_EMAIL)"
@@ -95,6 +103,21 @@ else
         [ "x$2" != "x" ] && PATH_BACKUP="$2"
 fi
 
+if [ "$( uname )" = 'FreeBSD' ]; then
+	FIND='gfind'
+        SAMBA_CONF_DIR='/usr/local/etc/smb4.conf.d'
+        APACHE_CONF_DIR='/usr/local/etc/apache24/Vhosts'
+        APACHE_CONF_POSTFIX='.conf'
+        NGINX_CONF_POSTFIX='.conf'
+        NGINX_CONF_DIR='/usr/local/etc/nginx/Vhosts'
+elif [ "$( uname )" = 'Linux' ]; then
+	FIND='find'
+        SAMBA_CONF_DIR='/etc/samba/smb.conf.d'
+        APACHE_CONF_POSTFIX=''
+        NGINX_CONF_POSTFIX=''
+        APACHE_CONF_DIR='/etc/apache24/sites-available'
+        NGINX_CONF_DIR='/etc/nginx/sites-avaiable'
+fi
 
 if cd "$VHOSTS_DIR"; then
 	for VHOST_ACCOUNTFILE in $(ls -1 $VHOSTS_DIR/$VHOST/account.txt); do
@@ -103,19 +126,19 @@ if cd "$VHOSTS_DIR"; then
 		TMP_BACKUP="$VHOST_PATH/tmpdir_backup_$TIMEMARK"
 		[ "x$RSYNC_ONLY" = "x" ] && \
 			mkdir -p "$TMP_BACKUP"
-		USER="$(cat $VHOST_ACCOUNTFILE | grep '^USER:' | sed 's/^USER:\s*//')"
-		MYSQL_PWD="$(cat $VHOST_ACCOUNTFILE | grep '^PWD_MYSQL:' | sed 's/^PWD_MYSQL:\s*//')"
-		USER_GRIVE_EMAIL="$(cat $VHOST_ACCOUNTFILE | grep '^GRIVE_EMAIL:' | sed 's/^GRIVE_EMAIL:\s*//')"
+		USER="$(cat $VHOST_ACCOUNTFILE | grep '^USER:' | sed -E 's/^USER:\s*//' | sed 's/^[[:blank:]]*//g')"
+		MYSQL_PWD="$(cat $VHOST_ACCOUNTFILE | grep '^PWD_MYSQL:' | sed 's/^PWD_MYSQL:\s*//' | sed 's/^[[:blank:]]*//g')"
+		USER_GRIVE_EMAIL="$(cat $VHOST_ACCOUNTFILE | grep '^GRIVE_EMAIL:' | sed 's/^GRIVE_EMAIL:\s*//' | sed 's/^[[:blank:]]*//g')"
 		[ "x$USER_GRIVE_EMAIL" = "x" ] && USER_GRIVE_EMAIL="$GRIVE_EMAIL"
 		if [ "x$USER_GRIVE_EMAIL" = "x$GRIVE_EMAIL" -o "x$USER_GRIVE_EMAIL" = "x" ]; then
 			USER_GRIVE_DIR="$GRIVE_DIR"
 			USER_GRIVE_SUBDIR_BACKUPS="$GRIVE_SUBDIR_BACKUPS"
 			USER_GRIVE_EMAIL="";
 		else
-			USER_GRIVE_EMAIL="$(echo $USER_GRIVE_EMAIL | sed -E 's;[^@]*;;g' )"
-			USER_GRIVE_DIR="$(cat $VHOST_ACCOUNTFILE | grep '^GRIVE_DIR:' | sed 's/^GRIVE_DIR:\s*//')"
+			USER_GRIVE_EMAIL="$(echo $USER_GRIVE_EMAIL | sed -E 's;[^@]*;;g' | sed 's/^[[:blank:]]*//g' )"
+			USER_GRIVE_DIR="$(cat $VHOST_ACCOUNTFILE | grep '^GRIVE_DIR:' | sed 's/^GRIVE_DIR:\s*//' | sed 's/^[[:blank:]]*//g' )"
 			if [ "x$USER_GRIVE_DIR" = "x" ]; then
-				USER_GRIVE_SUBDIR_BACKUPS="$(cat $VHOST_ACCOUNTFILE | grep '^GRIVE_SUBDIR_BACKUPS:' | sed 's/^GRIVE_SUBDIR_BACKUPS:\s*//' | sed -E 's;^(/*)(.*[^/])*(/*)$;\2;g' )"
+				USER_GRIVE_SUBDIR_BACKUPS="$(cat $VHOST_ACCOUNTFILE | grep '^GRIVE_SUBDIR_BACKUPS:' | sed 's/^GRIVE_SUBDIR_BACKUPS:\s*//' | sed -E 's;^(/*)(.*[^/])*(/*)$;\2;g' | sed 's/^[[:blank:]]*//g' )"
 				if [ "$USER_GRIVE_EMAIL" = "@" ]; then
 					USER_GRIVE_DIR="$VHOST_PATH/gDrive"
 				else
@@ -212,18 +235,23 @@ if cd "$VHOSTS_DIR"; then
 			else
 				chown "$USER":"$WWW_GROUP" "dump-$USER.sql" || exit_with_error "BACKUP '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE"
 				chmod 600 "dump-$USER.sql" || exit_with_error "BACKUP '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE"
-				if [ "x$APACHE_CONF" = "xSAVE" ]; then
-					cp -f "/etc/apache2/sites-available/$VHOST_HOSTNAME" "apache2-vhost.conf" || exit_with_error "BACKUP '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE"
+				if [ "x$APACHE_ENABLED" = "xYES" -a "x$APACHE_CONF" = "xSAVE" ]; then
+					cp -f "$APACHE_CONF_DIR/$VHOST_HOSTNAME$APACHE_CONF_POSTFIX" "apache2-vhost.conf" || exit_with_error "BACKUP '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE"
 					chown "$USER":"$WWW_GROUP" "apache2-vhost.conf" || exit_with_error "BACKUP '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE"
 					chmod 600 "apache2-vhost.conf"  || exit_with_error "BACKUP '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE"
 				fi
-				if [ "x$SAMBA_CONF" = "xSAVE" ]; then
-					cp -f "/etc/samba/smb.conf.d/$VHOST_HOSTNAME.smb.conf" "samba-share.conf" || exit_with_error "BACKUP '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE"
+				if [ "x$NGINX_ENABLED" = "xYES" -a "x$NGINX_CONF" = "xSAVE" ]; then
+					cp -f "$NGINX_CONF_DIR/$VHOST_HOSTNAME$NGINX_CONF_POSTFIX" "nginx-vhost.conf" || exit_with_error "BACKUP '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE"
+					chown "$USER":"$WWW_GROUP" "nginx-vhost.conf" || exit_with_error "BACKUP '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE"
+					chmod 600 "nginx-vhost.conf"  || exit_with_error "BACKUP '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE"
+				fi
+				if [ "x$SAMBA_ENABLED" = "xYES" -a "x$SAMBA_CONF" = "xSAVE" ]; then
+					cp -f "$SAMBA_CONF_DIR/$VHOST_HOSTNAME.smb.conf" "samba-share.conf" || exit_with_error "BACKUP '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE"
 					chown "$USER":"$WWW_GROUP" "samba-share.conf" || exit_with_error "BACKUP '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE"
 					chmod 600 "dump-$USER.sql" "samba-share.conf" || exit_with_error "BACKUP '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE"
 				fi
-				find . \! \( -name "*.tbz" -o -name "*.tbz.log"  -o -name "*.jpa" \) -fprintf "filelist-$TIMEMARK.ls" "%u:%g\t%m\t%s\t%p\n"
-				find . $FIND_OPT_DIFF_BACKUP -type f -a \! \( -name "*.tbz" -o -name "*.tbz.log"  -o -name "*.jpa" \) > "list-files2tar-$TIMEMARK.ls"
+				$FIND . \! \( -name "*.tbz" -o -name "*.tbz.log"  -o -name "*.jpa" \) -fprintf "filelist-$TIMEMARK.ls" "%u:%g\t%m\t%s\t%p\n"
+				$FIND . $FIND_OPT_DIFF_BACKUP -type f -a \! \( -name "*.tbz" -o -name "*.tbz.log"  -o -name "*.jpa" \) > "list-files2tar-$TIMEMARK.ls"
 				for BACKUP_IGNORE_DIR in $(cat "list-files2tar-$TIMEMARK.ls" | grep .backup-ignore | sed -E 's;^(.*)/.backup-ignore;\1;'); do
 					cat "list-files2tar-$TIMEMARK.ls" | grep -v $BACKUP_IGNORE_DIR >  "tmplist-files2tar-$TIMEMARK.ls"
 					rm "list-files2tar-$TIMEMARK.ls"
@@ -239,6 +267,7 @@ if cd "$VHOSTS_DIR"; then
 				rm "dump-$USER.sql" "filelist-$TIMEMARK.ls" "list-files2tar-$TIMEMARK.ls" || exit_with_error "CLEAN TMP FILES '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE"
 				[ -e "dump-$USER-$DIFF_DUMP_TIMEMARK-$TIMEMARK.diff" ] && ( rm "dump-$USER-$DIFF_DUMP_TIMEMARK-$TIMEMARK.diff" || exit_with_error "CLEAN TMP FILES '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE" )
 				[ "x$APACHE_CONF" = "xSAVE" ] && ( rm "apache2-vhost.conf" || exit_with_error "CLEAN TMP FILES '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE" )
+				[ "x$NGINX_CONF" = "xSAVE" ] && ( rm "nginx-vhost.conf" || exit_with_error "CLEAN TMP FILES '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE" )
 				[ "x$SAMBA_CONF" = "xSAVE" ] && ( rm "samba-share.conf"  || exit_with_error "CLEAN TMP FILES '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE" )
 			fi
 			
@@ -273,9 +302,9 @@ if cd "$VHOSTS_DIR"; then
 			fi
 		fi
 		# RSYNC
-		USER_RSYNC="$(cat $VHOST_ACCOUNTFILE | grep '^RSYNC:' | sed 's/^RSYNC:\s*//')"
+		USER_RSYNC="$(cat $VHOST_ACCOUNTFILE | grep '^RSYNC:' | sed 's/^RSYNC:\s*//' | sed 's/^[[:blank:]]*//g')"
 		if [ "x$USER_RSYNC" != "x" ]; then
-				USER_GRIVE_SUBDIR_RSYNC="$(cat $VHOST_ACCOUNTFILE | grep '^GRIVE_SUBDIR_RSYNC:' | sed 's/^GRIVE_SUBDIR_RSYNC:\s*//')"
+				USER_GRIVE_SUBDIR_RSYNC="$(cat $VHOST_ACCOUNTFILE | grep '^GRIVE_SUBDIR_RSYNC:' | sed 's/^GRIVE_SUBDIR_RSYNC:\s*//'  | sed 's/^[[:blank:]]*//g')"
 				[ "x$USER_GRIVE_SUBDIR_RSYNC" = "x" ] && USER_GRIVE_SUBDIR_RSYNC="$GRIVE_SUBDIR_RSYNC"
 				[ ! -e "$USER_GRIVE_DIR/$USER_GRIVE_SUBDIR_RSYNC" ] && mkdir -p "$USER_GRIVE_DIR/$USER_GRIVE_SUBDIR_RSYNC"
 				for rsync_item in $USER_RSYNC; do

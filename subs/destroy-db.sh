@@ -34,7 +34,7 @@ VHOST_ACCOUNTFILE="$VHOSTS_DIR/$VHOST/account.txt";
 USER="$(cat $VHOST_ACCOUNTFILE | grep 'USER:' | sed 's/^USER:\s*//' | sed 's/^[[:blank:]]*//g')"
 ( cat ../templates/destroy-db-user.sql.tpl \
 	| sed -E "s/\\{\\\$USER\\}/$USER/g" \
-	| mysql --password="$MYSQL_ROOT_PWD" ) || exit_with_error "ERROR: WHILE DESTROY USER AND DB"
+	| mysql --password="$MYSQL_ROOT_PWD" ) 2>&1 > /dev/null || exit_with_error "ERROR: WHILE DESTROY USER AND DB"
 cd "$PWD_SRC"
 exit 0
 

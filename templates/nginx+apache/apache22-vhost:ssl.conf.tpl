@@ -2,9 +2,12 @@
 # VIRTUALHOST SSL FOR {$VHOST_HOSTNAME}
 # ######################### #
 
-<VirtualHost {$SERVER_IP}:{$APACHE_HTTPS}>
-	ServerName   {$VHOST_HOSTNAME}
+#<VirtualHost {$SERVER_IP}:{$APACHE_HTTPS}>
+<VirtualHost *:{$APACHE_HTTPS}>
+	ServerName  {$VHOST}.local
+	ServerAlias {$VHOST_HOSTNAME}
 {$SERVER_ALIASES}
+
 	ServerAdmin  {$ADMIN_EMAIL}
 
 	DocumentRoot {$VHOSTS_DIR}/{$VHOST}/{$HTTPDOCS_DIR}

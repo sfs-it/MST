@@ -9,7 +9,7 @@
 # USAGE VHOST USER [PWD_FTP [PWD_MYSQL [ADMIN_EMAIL]]]
 BASESCRIPT="$(basename $0)"
 PATHSCRIPT="$(dirname $0)"
-SYNTAX="$BASESCRIPT VHOST USER [PWD_FTP [PWD_MYSQL [HOST_EMAIL [ADMIN_EMAIL [GRIVE_EMAIL [GRIVE_DIR [GRIVE_SUBDIR_BACKUPS]]]]]]][ -ALIASES ... VHOSTNAME ... VHOSTNAME ]" 
+SYNTAX="$BASESCRIPT VHOST USER [PWD_FTP [PWD_MYSQL [HOST_EMAIL [ADMIN_EMAIL [GRIVE_EMAIL [GRIVE_DIR [GRIVE_SUBDIR_BACKUPS]]]]]]][ -ALIAS ... VHOSTNAME ... VHOSTNAME ]" 
 
 SETTINGS_FILE="/etc/SFSit_MST.conf.sh"
 test -s "/root/SFSit_MST.conf.sh" && SETTINGS_FILE="/root/SFSit_MST.conf.sh"
@@ -54,7 +54,7 @@ id $USER 2>&1 > /dev/null
 param_aliases=3
 while [ $param_aliases -le $# ]; do
 	eval param='$'$param_aliases
-	if [ "x$(echo $param | tr '[:lower:]' '[:upper:]')" = 'x-ALIASES' ]; then
+	if [ "x$(echo $param | tr '[:lower:]' '[:upper:]')" = 'x-ALIAS' ]; then
 		break
 	fi
 	param_aliases=$(($param_aliases + 1))
@@ -87,6 +87,11 @@ sh ./subs/create-account.txt.sh "$VHOST" "$USER" "$PWD_FTP" "$PWD_MYSQL" "$HOST_
 echo "report 'account.txt' file created"
 echo "CREATE '$USER' account"
 sh ./subs/create-user.sh "$VHOST" || exit_with_error "ERROR: CREATING USER '$USER'"
+if [ "x$PUBLIC_IP" = "xNONE" ]; then
+	echo "** PUBLIC_IP config is disabled, to enable add \"PUBLIC_IP='xxx.xxx.xxx.xxx'\" with your public ip to your $SETTINGS_FILE"
+else
+	sh ./subs/add-vhost-to-hosts.sh "$VHOST" $VHOST_ALIASES ||exit_with_error "ERROR: ADDING $VHOST and $VHOST_ALIASES to /etc/hosts"
+fi
 echo "CREATE $VHOST in $VHOSTS_DIR of $HOSTNAME for $USER with ftp password '$PWD_FTP' and mysql password: '$PWD_MYSQL'"
 sh ./subs/create-vhost.sh "$VHOST" $VHOST_ALIASES ||exit_with_error "ERROR: CREATING VHOST '$VHOST'"
 echo "vhost '$VHOST' created"
@@ -116,14 +121,9 @@ else
 fi
 if [ "x$HTTPS_ENABLED" = "xYES" ]; then
 	sh ./subs/create-vhost:ssl.sh "$VHOST" $VHOST_ALIASES ||exit_with_error "ERROR: CREATING VHOST SSL '$VHOST'"
+	echo "vhost ssl '$VHOST' created"
 else
 	echo "** HTTPS VHOST config is disabled, to enable add \"HTTPS_ENABLED='YES'\" to your $SETTINGS_FILE"
-fi
-echo "vhost ssl '$VHOST' created"
-if [ "x$PUBLIC_IP" = "xNONE" ]; then
-	echo "** PUBLIC_IP config is disabled, to enable add \"PUBLIC_IP='xxx.xxx.xxx.xxx'\" with your public ip to your $SETTINGS_FILE"
-else
-	sh ./subs/add-vhost-to-hosts.sh "$VHOST" $VHOST_ALIASES ||exit_with_error "ERROR: ADDING $VHOST and $VHOST_ALIASES to /etc/hosts"
 fi
 echo "SEND email to $ADMIN_EMAIL"
 sh ./subs/create-sendmail.sh "$VHOST" || exit_with_error  "ERROR: SENDING REPORT"

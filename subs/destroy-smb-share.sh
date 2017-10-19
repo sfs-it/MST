@@ -46,9 +46,9 @@ cat $SAMBA_VHOSTS_CONF_FILE | sed -E "s;include = $SAMBA_CONF_DIR/$VHOST.smb.con
 mv -f $SAMBA_VHOSTS_CONF_FILE.tmp $SAMBA_VHOSTS_CONF_FILE
 
 if [ "$( uname )" = 'FreeBSD' ]; then
-        service samba_server restart || exit_with_error "ERROR: restating smb"
+        service samba_server restart 2>&1 > /dev/null || exit_with_error "ERROR: restating smb"
 elif [ "$( uname )" = 'Linux' ]; then
-        service smbd restart || exit_with_error "ERROR: restating smb"
+        service smbd restart 2>&1 > /dev/null || exit_with_error "ERROR: restating smb"
 fi
 
 cd "$PWD_SRC"

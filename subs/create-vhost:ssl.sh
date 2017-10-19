@@ -95,12 +95,13 @@ else
 	VHOST_HOSTNAME_ALIASES=""
 fi
 while [ "x$2" != "x" ]; do
-	if [ "x$DEVEL_DOMAIN" != 'x' -a "x$DOMAIN" != "x$DEVEL_DOMAIN" ]; then
-		VHOST_ALIAS="$(change_1st_level_domain $2 $DEVEL_DOMAIN)"
-		echo "DEVELOPMENT DOMAIN change '$2' in '$VHOST_ALIAS'"
-	else
-		VHOST_ALIAS=$2
-	fi
+#	if [ "x$DEVEL_DOMAIN" != 'x' -a "x$DOMAIN" != "x$DEVEL_DOMAIN" ]; then
+#		VHOST_ALIAS="$(change_1st_level_domain $2 $DEVEL_DOMAIN)"
+#		echo "DEVELOPMENT DOMAIN change '$2' in '$VHOST_ALIAS'"
+#	else
+#		VHOST_ALIAS=$2
+#	fi
+	VHOST_ALIAS=$2
 	if [ "x$VHOST_ALIAS" != "x$VHOST" ]; then
 		PRESENCE_CHECK=$(printf "$SERVER_ALIASES" | grep "ServerAlias $VHOST_ALIAS")
 		if [ "x$PRESENCE_CHECK" = "x" ]; then
@@ -163,56 +164,45 @@ apache_template(){
                 | tr '\r' '\n'
 }
 
+add_apache_config(){
+	echo 'add Apache config for vhost'
+	if [ "$( uname )" = 'FreeBSD' ]; then
+		VHOST_CONFIG_DIR="/usr/local/etc/$APACHE_VERSION/Vhosts"
+		( apache_template > "$VHOST_CONFIG_DIR/$VHOST:ssl.conf" )  || exit_with_error "ERROR: creating '$VHOST_CONFIG_DIR/$VHOST:ssl.conf'"
+		service $APACHE_VERSION restart 2>&1 > /dev/null || exit_with_error "ERROR: restating $APACHE_VERSION"
+	elif [ "$( uname )" = 'Linux' ]; then
+		VHOST_CONFIG_DIR='/etc/apache2/sites-available'
+		VHOST_CONFIG_ENABLED_DIR='/etc/apache2/sites-enabled'
+		( apache_template > "$VHOST_CONFIG_DIR/$VHOST:ssl" )  || exit_with_error "ERROR: creating '$VHOST_CONFIG_DIR/$VHOST:ssl.conf'"
+		ln -fs "$VHOST_CONFIG_DIR/$VHOST:ssl.conf" "$VHOST_CONFIG_ENABLED_DIR/$VHOST:ssl.conf" || \
+			exit_with_error "ERROR: linking '$VHOST_CONFIG_DIR/$VHOST:ssl.conf' to '$VHOST_CONFIG_ENABLED_DIR/$VHOST:ssl.conf'"
+		service apache2 restart 2>&1 > /dev/null || exit_with_error "ERROR: restating apache2"
+	fi
+}
+
+add_nginx_config(){
+	echo 'add NGINX config for vhost'
+	if [ "$( uname )" = 'FreeBSD' ]; then
+		VHOST_CONFIG_DIR="/usr/local/etc/nginx/Vhosts"
+		( nginx_template > "$VHOST_CONFIG_DIR/$VHOST:ssl.conf" )  || exit_with_error "ERROR: creating '$VHOST_CONFIG_DIR/$VHOST:ssl.conf'"
+		service nginx restart 2>&1 > /dev/null || exit_with_error "ERROR: restating nginx"
+	elif [ "$( uname )" = 'Linux' ]; then
+		VHOST_CONFIG_DIR='/etc/nginx/sites-available'
+		VHOST_CONFIG_ENABLED_DIR='/etc/nginx/sites-enabled'
+		( nginx_template > "$VHOST_CONFIG_DIR/$VHOST:ssl" )  || exit_with_error "ERROR: creating '$VHOST_CONFIG_DIR/$VHOST:ssl.conf'"
+		ln -fs "$VHOST_CONFIG_DIR/$VHOST:ssl.conf" "$VHOST_CONFIG_ENABLED_DIR/$VHOST:ssl.conf" || \
+			exit_with_error "ERROR: linking '$VHOST_CONFIG_DIR/$VHOST:ssl.conf' to '$VHOST_CONFIG_ENABLED_DIR/$VHOST:ssl.conf'"
+		service nginx restart 2>&1 > /dev/null || exit_with_error "ERROR: restating nginx"
+	fi
+}
 SERVER_ALIASES=$(printf "$SERVER_ALIASES" | tr '\n' '\r')
 if [ "x$WEBSERVER" = 'xapache' ]; then
-	if [ "$( uname )" = 'FreeBSD' ]; then
-		VHOST_CONFIG_DIR="/usr/local/etc/$APACHE_VERSION/Vhosts"
-		( apache_template > "$VHOST_CONFIG_DIR/$VHOST:ssl.conf" )  || exit_with_error "ERROR: creating '$VHOST_CONFIG_DIR/$VHOST:ssl.conf'"
-		service $APACHE_VERSION restart || exit_with_error "ERROR: restating $APACHE_VERSION"
-	elif [ "$( uname )" = 'Linux' ]; then
-		VHOST_CONFIG_DIR='/etc/apache2/sites-available'
-		VHOST_CONFIG_ENABLED_DIR='/etc/apache2/sites-enabled'
-		( apache_template > "$VHOST_CONFIG_DIR/$VHOST:ssl" )  || exit_with_error "ERROR: creating '$VHOST_CONFIG_DIR/$VHOST:ssl.conf'"
-		ln -fs "$VHOST_CONFIG_DIR/$VHOST:ssl.conf" "$VHOST_CONFIG_ENABLED_DIR/$VHOST:ssl.conf" || \
-			exit_with_error "ERROR: linking '$VHOST_CONFIG_DIR/$VHOST:ssl.conf' to '$VHOST_CONFIG_ENABLED_DIR/$VHOST:ssl.conf'"
-		service apache2 restart || exit_with_error "ERROR: restating apache2"
-	fi
-
+	add_apache_config
 elif [ "x$WEBSERVER" = 'xnginx' ]; then
-	if [ "$( uname )" = 'FreeBSD' ]; then
-		VHOST_CONFIG_DIR="/usr/local/etc/nginx/Vhosts"
-		( nginx_template > "$VHOST_CONFIG_DIR/$VHOST:ssl.conf" )  || exit_with_error "ERROR: creating '$VHOST_CONFIG_DIR/$VHOST:ssl.conf'"
-		service nginx restart || exit_with_error "ERROR: restating nginx"
-	elif [ "$( uname )" = 'Linux' ]; then
-		VHOST_CONFIG_DIR='/etc/nginx/sites-available'
-		VHOST_CONFIG_ENABLED_DIR='/etc/nginx/sites-enabled'
-		( nginx_template > "$VHOST_CONFIG_DIR/$VHOST:ssl" )  || exit_with_error "ERROR: creating '$VHOST_CONFIG_DIR/$VHOST:ssl.conf'"
-		ln -fs "$VHOST_CONFIG_DIR/$VHOST:ssl.conf" "$VHOST_CONFIG_ENABLED_DIR/$VHOST:ssl.conf" || \
-			exit_with_error "ERROR: linking '$VHOST_CONFIG_DIR/$VHOST:ssl.conf' to '$VHOST_CONFIG_ENABLED_DIR/$VHOST:ssl.conf'"
-		service nginx restart || exit_with_error "ERROR: restating nginx"
-	fi
+	add_nginx_config
 elif [ "x$WEBSERVER" = 'xnginx+apache' ]; then
-	if [ "$( uname )" = 'FreeBSD' ]; then
-		VHOST_CONFIG_DIR="/usr/local/etc/nginx/Vhosts"
-		( nginx_template > "$VHOST_CONFIG_DIR/$VHOST:ssl.conf" )  || exit_with_error "ERROR: creating '$VHOST_CONFIG_DIR/$VHOST:ssl.conf'"
-		service nginx restart || exit_with_error "ERROR: restating nginx"
-		VHOST_CONFIG_DIR="/usr/local/etc/$APACHE_VERSION/Vhosts"
-		( apache_template > "$VHOST_CONFIG_DIR/$VHOST:ssl.conf" )  || exit_with_error "ERROR: creating '$VHOST_CONFIG_DIR/$VHOST:ssl.conf'"
-		service $APACHE_VERSION restart || exit_with_error "ERROR: restating $APACHE_VERSION"
-	elif [ "$( uname )" = 'Linux' ]; then
-		VHOST_CONFIG_DIR='/etc/nginx/sites-available'
-		VHOST_CONFIG_ENABLED_DIR='/etc/nginx/sites-enabled'
-		( nginx_template > "$VHOST_CONFIG_DIR/$VHOST:ssl" )  || exit_with_error "ERROR: creating '$VHOST_CONFIG_DIR/$VHOST:ssl.conf'"
-		ln -fs "$VHOST_CONFIG_DIR/$VHOST:ssl.conf" "$VHOST_CONFIG_ENABLED_DIR/$VHOST:ssl.conf" || \
-			exit_with_error "ERROR: linking '$VHOST_CONFIG_DIR/$VHOST:ssl.conf' to '$VHOST_CONFIG_ENABLED_DIR/$VHOST:ssl.conf'"
-		service nginx restart || exit_with_error "ERROR: restating nginx"
-		VHOST_CONFIG_DIR='/etc/apache2/sites-available'
-		VHOST_CONFIG_ENABLED_DIR='/etc/apache2/sites-enabled'
-		( apache_template > "$VHOST_CONFIG_DIR/$VHOST:ssl" )  || exit_with_error "ERROR: creating '$VHOST_CONFIG_DIR/$VHOST:ssl.conf'"
-		ln -fs "$VHOST_CONFIG_DIR/$VHOST:ssl.conf" "$VHOST_CONFIG_ENABLED_DIR/$VHOST:ssl.conf" || \
-			exit_with_error "ERROR: linking '$VHOST_CONFIG_DIR/$VHOST:ssl.conf' to '$VHOST_CONFIG_ENABLED_DIR/$VHOST:ssl.conf'"
-		service apache2 restart || exit_with_error "ERROR: restating apache2"
-	fi
+	add_nginx_config
+	add_apache_config
 fi
 echo 'UPDATE account.txt for VHOST HTTPs (SSL)'
 ( printf "\n\nAPACHE HTTPS VHOST:\n\thttps://$VHOST\n$SERVER_ALIASES\n\tCERTIFICATES:\n\tarchive:/usr/local/etc/letsencrypt/archive/$VHOST\n\tlive:/usr/local/etc/letsencrypt/live/$VHOST\n" \
