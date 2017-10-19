@@ -9,7 +9,7 @@ server {
         include /usr/local/etc/nginx/ssl_common.conf;
 
         location / {
-            root {$VHOSTS_DIR}/{$VHOST}/{$HTTPDOCS_DIR}
+            root {$VHOSTS_DIR}/{$VHOST}/{$HTTPDOCS_DIR};
             proxy_pass https://{$VHOST_HOSTNAME}:{$APACHE_HTTPS};
             include /usr/local/etc/nginx/proxy.conf;
             # include /usr/local/etc/nginx/proxy_cache.conf;
