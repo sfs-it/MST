@@ -70,10 +70,11 @@ change_1st_level_domain(){
 VHOST=$1
 
 VHOST_ACCOUNTFILE="$VHOSTS_DIR/$VHOST/account.txt";
-[ -s "$VHOST_ACCOUNTFILE" ] || exit_with_error "ERROR: CANNOT LOAD 'account.txt' FOR $VHOST"
-USER=$(cat $VHOST_ACCOUNTFILE | grep 'USER:' | sed 's/^USER:\s*//' | sed 's/^[[:blank:]]*//g')
-ADMIN_EMAIL=$(cat $VHOST_ACCOUNTFILE | grep 'ADMIN_EMAIL:' | sed 's/^ADMIN_EMAIL:\s*//' | sed 's/^[[:blank:]]*//g')
-VHOST_ONDOMAIN=$(echo $VHOST | sed -E 's/(\.[^\.]*)$//' | sed 's/^[[:blank:]]*//g')
+if [ -s "$VHOST_ACCOUNTFILE" ]; then
+    CERTBOT_HOSTS=$(cat $VHOST_ACCOUNTFILE | grep 'CERTBOT_DOMAINS:' | sed 's/^CERTBOT_DOMAINS:\s*//' | sed 's/^[[:blank:]]*//g')
+else
+    CERTBOT_HOSTS=""
+fi
 
 DOMAIN="$( get_domain $VHOST )"
 if [ "x$DEVEL_DOMAIN" != 'x' -a "x$DOMAIN" != "x$DEVEL_DOMAIN" ]; then
@@ -83,141 +84,13 @@ if [ "x$DEVEL_DOMAIN" != 'x' -a "x$DOMAIN" != "x$DEVEL_DOMAIN" ]; then
 else
         VHOST_HOSTNAME=$VHOST
 fi
-VHOSTs_SSL=$VHOST_HOSTNAME
-CERTBOT_PARAMS=" -d $VHOST_HOSTNAME"
-if [ "x$DOMAIN" != "x" -a \( "x$( get_host $VHOST )" = "xwww" \) ]; then
-	VHOSTs_SSL="$VHOSTs_SSL,$DOMAIN"
-	SERVER_ALIASES="\tServerAlias $DOMAIN\n"
-	VHOST_HOSTNAME_ALIASES=" $DOMAIN"
-	CERTBOT_PARAMS="$CERTBOT_PARAMS -d $DOMAIN"
-else
-	SERVER_ALIASES=""
-	VHOST_HOSTNAME_ALIASES=""
+if [ "x$CERTBOT_HOSTS" = "x" ]; then
+	CERTBOT_HOSTS="$VHOST_HOSTNAME"
 fi
-while [ "x$2" != "x" ]; do
-	if [ "x$DEVEL_DOMAIN" != 'x' -a "x$DOMAIN" != "x$DEVEL_DOMAIN" ]; then
-		VHOST_ALIAS="$(change_1st_level_domain $2 $DEVEL_DOMAIN)"
-		echo "DEVELOPMENT DOMAIN change '$2' in '$VHOST_ALIAS'"
-	else
-		VHOST_ALIAS=$2
-	fi
-	if [ "x$VHOST_ALIAS" != "x$VHOST" ]; then
-		PRESENCE_CHECK=$(printf "$SERVER_ALIASES" | grep "ServerAlias $VHOST_ALIAS")
-		if [ "x$PRESENCE_CHECK" = "x" ]; then
-			VHOSTs_SSL="$VHOSTs_SSL,$VHOST_ALIAS"
-			SERVER_ALIASES="$SERVER_ALIASES\tServerAlias $VHOST_ALIAS\n"
-			VHOST_HOSTNAME_ALIASES="$VHOST_HOSTNAME_ALIASES $VHOST_ALIAS"
-			CERTBOT_PARAMS="$CERTBOT_PARAMS -d $VHOST_ALIAS"
-			VHOST_ALIAS_HOST="$( get_host $VHOST_ALIAS )"
-			if [ ${#VHOST_ALIAS} -gt 4 -a "x$VHOST_ALIAS_HOST" = 'xwww' ]; then 
-				VHOST_ALIAS_DOMAIN="$( get_domain $VHOST_ALIAS )"
-				PRESENCE_CHECK=$(printf "$SERVER_ALIASES" | grep "ServerAlias $VHOST_ALIAS_DOMAIN")
-				if [ "x$VHOST_ALIAS_DOMAIN" != "x" -a "x$PRESENCE_CHECK" = "x" ]; then
-					VHOSTs_SSL="$VHOSTs_SSL,$VHOST_ALIAS_DOMAIN"
-					SERVER_ALIASES="$SERVER_ALIASES\tServerAlias $VHOST_ALIAS_DOMAIN\n"
-					VHOST_HOSTNAME_ALIASES="$VHOST_HOSTNAME_ALIASES $ALIAS_DOMAIN"
-					CERTBOT_PARAMS="$CERTBOT_PARAMS -d $VHOST_ALIAS_DOMAIN"
-				fi
-			fi
-		fi
-	fi
-	shift
-done
-echo 'CREATE SSL CERTIFICATES'
-certbot certonly --webroot -w "$VHOSTS_DIR/$VHOST/$HTTPDOCS_DIR" $CERTBOT_PARAMS || exit_with_error "ERROR: creating CERTIFICATES FOR '$VHOST'"
-echo 'CREATE VHOST HTTPS CONFIGURATION'
-nginx_template(){
-         cat "../templates/$WEBSERVER/nginx-vhost:ssl.conf.tpl" \
-                | sed -E "s#\\{\\\$SERVER_IP\\}#$SERVER_IP#g" \
-                | sed -E "s#\\{\\\$VHOST\\}#$VHOST#g" \
-                | sed -E "s#\\{\\\$VHOST_HOSTNAME\\}#$VHOST_HOSTNAME#g" \
-                | sed -E "s#\\{\\\$VHOST_HOSTNAME_ALIASES\\}#$VHOST_HOSTNAME_ALIASES#g" \
-                | sed -E "s#\\{\\\$ADMIN_EMAIL\\}#$ADMIN_EMAIL#g" \
-                | sed -E "s#\\{\\\$VHOSTS_DIR\\}#$VHOSTS_DIR#g" \
-                | sed -E "s#\\{\\\$HTTPDOCS_DIR\\}#$HTTPDOCS_DIR#g" \
-                | sed -E "s#\\{\\\$HTTPLOGS_DIR\\}#$HTTPLOGS_DIR#g" \
-                | sed -E "s#\\{\\\$HOSTNAME\\}#$HOSTNAME#g" \
-                | sed -E "s#\\{\\\$USER\\}#$USER#g" \
-                | sed -E "s#\\{\\\$VHOST_ONDOMAIN\\}#$VHOST_ONDOMAIN#g" \
-                | sed -E "s#\\{\\\$SERVER_ALIASES\\}#$SERVER_ALIASES#g" \
-                | sed -E "s#\\{\\\$APACHE_HTTP\\}#$APACHE_HTTP#g" \
-                | sed -E "s#\\{\\\$APACHE_HTTPS\\}#$APACHE_HTTPS#g" \
-                | tr '\r' '\n'
-}
-
-apache_template(){
-         cat "../templates/$WEBSERVER/$APACHE_VERSION-vhost:ssl.conf.tpl" \
-                | sed -E "s#\\{\\\$SERVER_IP\\}#$SERVER_IP#g" \
-                | sed -E "s#\\{\\\$VHOST\\}#$VHOST#g" \
-                | sed -E "s#\\{\\\$VHOST_HOSTNAME\\}#$VHOST_HOSTNAME#g" \
-                | sed -E "s#\\{\\\$ADMIN_EMAIL\\}#$ADMIN_EMAIL#g" \
-                | sed -E "s#\\{\\\$VHOSTS_DIR\\}#$VHOSTS_DIR#g" \
-                | sed -E "s#\\{\\\$HTTPDOCS_DIR\\}#$HTTPDOCS_DIR#g" \
-                | sed -E "s#\\{\\\$HTTPLOGS_DIR\\}#$HTTPLOGS_DIR#g" \
-                | sed -E "s#\\{\\\$HOSTNAME\\}#$HOSTNAME#g" \
-                | sed -E "s#\\{\\\$USER\\}#$USER#g" \
-                | sed -E "s#\\{\\\$VHOST_ONDOMAIN\\}#$VHOST_ONDOMAIN#g" \
-                | sed -E "s#\\{\\\$SERVER_ALIASES\\}#$SERVER_ALIASES#g" \
-                | sed -E "s#\\{\\\$APACHE_HTTP\\}#$APACHE_HTTP#g" \
-                | sed -E "s#\\{\\\$APACHE_HTTPS\\}#$APACHE_HTTPS#g" \
-                | tr '\r' '\n'
-}
-
-SERVER_ALIASES=$(printf "$SERVER_ALIASES" | tr '\n' '\r')
-if [ "x$WEBSERVER" = 'xapache' ]; then
-	if [ "$( uname )" = 'FreeBSD' ]; then
-		VHOST_CONFIG_DIR="/usr/local/etc/$APACHE_VERSION/Vhosts"
-		( apache_template > "$VHOST_CONFIG_DIR/$VHOST:ssl.conf" )  || exit_with_error "ERROR: creating '$VHOST_CONFIG_DIR/$VHOST:ssl.conf'"
-		service $APACHE_VERSION restart || exit_with_error "ERROR: restating $APACHE_VERSION"
-	elif [ "$( uname )" = 'Linux' ]; then
-		VHOST_CONFIG_DIR='/etc/apache2/sites-available'
-		VHOST_CONFIG_ENABLED_DIR='/etc/apache2/sites-enabled'
-		( apache_template > "$VHOST_CONFIG_DIR/$VHOST:ssl" )  || exit_with_error "ERROR: creating '$VHOST_CONFIG_DIR/$VHOST:ssl.conf'"
-		ln -fs "$VHOST_CONFIG_DIR/$VHOST:ssl.conf" "$VHOST_CONFIG_ENABLED_DIR/$VHOST:ssl.conf" || \
-			exit_with_error "ERROR: linking '$VHOST_CONFIG_DIR/$VHOST:ssl.conf' to '$VHOST_CONFIG_ENABLED_DIR/$VHOST:ssl.conf'"
-		service apache2 restart || exit_with_error "ERROR: restating apache2"
-	fi
-
-elif [ "x$WEBSERVER" = 'xnginx' ]; then
-	if [ "$( uname )" = 'FreeBSD' ]; then
-		VHOST_CONFIG_DIR="/usr/local/etc/nginx/Vhosts"
-		( nginx_template > "$VHOST_CONFIG_DIR/$VHOST:ssl.conf" )  || exit_with_error "ERROR: creating '$VHOST_CONFIG_DIR/$VHOST:ssl.conf'"
-		service nginx restart || exit_with_error "ERROR: restating nginx"
-	elif [ "$( uname )" = 'Linux' ]; then
-		VHOST_CONFIG_DIR='/etc/nginx/sites-available'
-		VHOST_CONFIG_ENABLED_DIR='/etc/nginx/sites-enabled'
-		( nginx_template > "$VHOST_CONFIG_DIR/$VHOST:ssl" )  || exit_with_error "ERROR: creating '$VHOST_CONFIG_DIR/$VHOST:ssl.conf'"
-		ln -fs "$VHOST_CONFIG_DIR/$VHOST:ssl.conf" "$VHOST_CONFIG_ENABLED_DIR/$VHOST:ssl.conf" || \
-			exit_with_error "ERROR: linking '$VHOST_CONFIG_DIR/$VHOST:ssl.conf' to '$VHOST_CONFIG_ENABLED_DIR/$VHOST:ssl.conf'"
-		service nginx restart || exit_with_error "ERROR: restating nginx"
-	fi
-elif [ "x$WEBSERVER" = 'xnginx+apache' ]; then
-	if [ "$( uname )" = 'FreeBSD' ]; then
-		VHOST_CONFIG_DIR="/usr/local/etc/nginx/Vhosts"
-		( nginx_template > "$VHOST_CONFIG_DIR/$VHOST:ssl.conf" )  || exit_with_error "ERROR: creating '$VHOST_CONFIG_DIR/$VHOST:ssl.conf'"
-		service nginx restart || exit_with_error "ERROR: restating nginx"
-		VHOST_CONFIG_DIR="/usr/local/etc/$APACHE_VERSION/Vhosts"
-		( apache_template > "$VHOST_CONFIG_DIR/$VHOST:ssl.conf" )  || exit_with_error "ERROR: creating '$VHOST_CONFIG_DIR/$VHOST:ssl.conf'"
-		service $APACHE_VERSION restart || exit_with_error "ERROR: restating $APACHE_VERSION"
-	elif [ "$( uname )" = 'Linux' ]; then
-		VHOST_CONFIG_DIR='/etc/nginx/sites-available'
-		VHOST_CONFIG_ENABLED_DIR='/etc/nginx/sites-enabled'
-		( nginx_template > "$VHOST_CONFIG_DIR/$VHOST:ssl" )  || exit_with_error "ERROR: creating '$VHOST_CONFIG_DIR/$VHOST:ssl.conf'"
-		ln -fs "$VHOST_CONFIG_DIR/$VHOST:ssl.conf" "$VHOST_CONFIG_ENABLED_DIR/$VHOST:ssl.conf" || \
-			exit_with_error "ERROR: linking '$VHOST_CONFIG_DIR/$VHOST:ssl.conf' to '$VHOST_CONFIG_ENABLED_DIR/$VHOST:ssl.conf'"
-		service nginx restart || exit_with_error "ERROR: restating nginx"
-		VHOST_CONFIG_DIR='/etc/apache2/sites-available'
-		VHOST_CONFIG_ENABLED_DIR='/etc/apache2/sites-enabled'
-		( apache_template > "$VHOST_CONFIG_DIR/$VHOST:ssl" )  || exit_with_error "ERROR: creating '$VHOST_CONFIG_DIR/$VHOST:ssl.conf'"
-		ln -fs "$VHOST_CONFIG_DIR/$VHOST:ssl.conf" "$VHOST_CONFIG_ENABLED_DIR/$VHOST:ssl.conf" || \
-			exit_with_error "ERROR: linking '$VHOST_CONFIG_DIR/$VHOST:ssl.conf' to '$VHOST_CONFIG_ENABLED_DIR/$VHOST:ssl.conf'"
-		service apache2 restart || exit_with_error "ERROR: restating apache2"
-	fi
-fi
-echo 'UPDATE account.txt for VHOST HTTPs (SSL)'
-( printf "\n\nAPACHE HTTPS VHOST:\n\thttps://$VHOST\n$SERVER_ALIASES\n\tCERTIFICATES:\n\tarchive:/usr/local/etc/letsencrypt/archive/$VHOST\n\tlive:/usr/local/etc/letsencrypt/live/$VHOST\n" \
-        |  sed -E 's#/ServerAlias #https://#g' \
-	| tr '\r' '\n' \
-        >> $VHOST_ACCOUNTFILE ) || exit_with_error "ERROR: updating VHOST HTTPs (SSL) info '$VHOST_ACCOUNTFILE'"
+CERTBOT_PARAMS=" -d `echo $CERTBOT_HOSTS| sed 's/ / -d /g'`"
+echo "CREATE SSL CERTIFICATES FOR $CERTBOT_HOSTS"
+certbot certonly --force-renew --webroot -w "$VHOSTS_DIR/$VHOST/$HTTPDOCS_DIR" $CERTBOT_PARAMS || exit_with_error "ERROR: creating CERTIFICATES FOR '$VHOST'"
 cd "$PWD_SRC"
+service apache restart
+service nginx restart
 exit 0
