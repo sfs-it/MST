@@ -3,7 +3,7 @@
 # SFS.it Maintenance Server Tools 
 # BSD style KISS scripts
 #
-# FILE MODIFIED CHECKER SINCE N DAYS
+# RSYNC VHOSTS TO NAS_DIS
 #
 # Written by Agostino Zanutto (agostino@sfs.it) for SFS.it MST
 #

@@ -8,10 +8,13 @@
 # Written by Agostino Zanutto (agostino@sfs.it) for SFS.it MST
 #
 
-if [ "x$2" != "x" ]; then
-	pkg info | awk '{print $1;}' | sed 's/-[^-]*$//' | perl -p -e 's/\n/ /' | grep $1 |sed -e "s/$2/$3/g"
-elif [ "x$1" != "x" ]; then
+if [ "x$1" = "x" ]; then
+	pkg info | awk '{print $1;}' | sed 's/-[^-]*$//' | perl -p -e 's/\n/ /'
+elif [ "x$2" = "x" ]; then
+	echo "filter results: $1"
 	pkg info | awk '{print $1;}' | sed 's/-[^-]*$//' | perl -p -e 's/\n/ /' | grep "$1"
 else
-	pkg info | awk '{print $1;}' | sed 's/-[^-]*$//' | perl -p -e 's/\n/ /'
+	echo  "replace \"$2\" with \"$3\""
+	pkg info | awk '{ print $1; }' | sed 's/-[^-]*$//' | perl -p -e 's/\n/ /' | grep $1 | sed -e "s/$2/$3/g"
 fi
+#EOF
