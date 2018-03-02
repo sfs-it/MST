@@ -71,4 +71,15 @@ if [ -d "media/com_uniterevolution2" ]; then
     find media/com_uniterevolution2/assets/rs-plugin/ ! -type f -exec chmod $CHMOD_OPTIONS 770 '{}' \;
     find media/com_uniterevolution2/assets/rs-plugin/ -type f -exec chmod $CHMOD_OPTIONS 660 '{}' \;
 fi
-
+#component chronoforms 
+if [ -d "libraries/cegcore2/cache" ]; then
+    chown $CHOWN_OPTIONS -R $WWW_USER libraries/cegcore2/cache
+    find libraries/cegcore2/cache ! -type f -exec chmod $CHMOD_OPTIONS 770 '{}' \;
+    find libraries/cegcore2/cache -type f -exec chmod $CHMOD_OPTIONS 660 '{}' \;
+fi
+#component widgetkit
+if [ -d "cache/widgetkit" ]; then
+    chown $CHOWN_OPTIONS -R $WWW_USER cache/widgetkit
+    find cache/widgetkit ! -type f -exec chmod $CHMOD_OPTIONS 770 '{}' \;
+    find cache/widgetkit -type f -exec chmod $CHMOD_OPTIONS 660 '{}' \;
+fi

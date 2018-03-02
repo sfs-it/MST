@@ -9,7 +9,7 @@
 
 #SYNTAX: backup.sh [[rsync|rsync-only]|[[diff-backup|diff] [db-only]]] [VHOST] [PATH]
 BASESCRIPT="$(basename $0)"
-SYNTAX="$0 [[rsync|rsync-only]|[[diff-backup|diff] [db-only]]] [VHOST] [PATH]"
+SYNTAX="$0 [[rsync|rsync-only]|[[diff-backup|diff] [db-only] [no-grive]] [VHOST] [PATH]"
 
 PWD_SRC="$(pwd)"
 SETTINGS_FILE="/etc/SFSit_MST.conf.sh"
