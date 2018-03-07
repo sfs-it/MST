@@ -1,4 +1,4 @@
-#~/bin/sh
+#!/bin/sh
 #
 # SFS.it Maintenance Server Tools 
 # BSD style KISS scripts
@@ -95,12 +95,6 @@ else
 	VHOST_HOSTNAME_ALIASES=""
 fi
 while [ "x$2" != "x" ]; do
-#	if [ "x$DEVEL_DOMAIN" != 'x' -a "x$DOMAIN" != "x$DEVEL_DOMAIN" ]; then
-#		VHOST_ALIAS="$(change_1st_level_domain $2 $DEVEL_DOMAIN)"
-#		echo "DEVELOPMENT DOMAIN change '$2' in '$VHOST_ALIAS'"
-#	else
-#		VHOST_ALIAS=$2
-#	fi
 	VHOST_ALIAS=$2
 	if [ "x$VHOST_ALIAS" != "x$VHOST" ]; then
 		PRESENCE_CHECK=$(printf "$SERVER_ALIASES" | grep "ServerAlias $VHOST_ALIAS")

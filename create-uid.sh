@@ -7,9 +7,10 @@
 # Written by Agostino Zanutto (agostino@sfs.it) for SFS.it MST
 #
 # USAGE VHOST USER [PWD_FTP [PWD_MYSQL [ADMIN_EMAIL]]]
+
 BASESCRIPT="$(basename $0)"
 PATHSCRIPT="$(realpath $(dirname $0))"
-SYNTAX="$BASESCRIPT VHOST USER [PWD_FTP [PWD_MYSQL [HOST_EMAIL [ADMIN_EMAIL [GRIVE_EMAIL [GRIVE_DIR [GRIVE_SUBDIR_BACKUPS]]]]]]][ -ALIAS ... VHOSTNAME ... VHOSTNAME ]" 
+SYNTAX="$BASESCRIPT UID VHOST USER [PWD_FTP [PWD_MYSQL [HOST_EMAIL [ADMIN_EMAIL [GRIVE_EMAIL [GRIVE_DIR [GRIVE_SUBDIR_BACKUPS]]]]]]][ -ALIAS ... VHOSTNAME ... VHOSTNAME ]" 
 
 SETTINGS_FILE="/etc/SFSit_MST.conf.sh"
 test -s "/root/SFSit_MST.conf.sh" && SETTINGS_FILE="/root/SFSit_MST.conf.sh"
@@ -39,16 +40,19 @@ else
 	exit 1
 fi
 PWD_SRC="$(pwd)"
-cd $(dirname $0) 
+cd "$(dirname "$(realpath $0)")"
 exit_with_error(){
 	test 'x' != "x$1" && echo "$1"
 	cd "$PWD_SRC"
 	exit 1
 }
-[ "x$1" = 'x' ] && exit_with_error "$SYNTAX: VHOST NEEDED"
-VHOST="$1"
-[ "x$1" = 'x' ] && exit_with_error "$SYNTAX: USER NEEDED"
-USER="$2"
+
+[ "x$1" = 'x' ] && exit_with_error "$SYNTAX: UID NEEDED"
+UID="$1"
+[ "x$2" = 'x' ] && exit_with_error "$SYNTAX: VHOST NEEDED"
+VHOST="$2"
+[ "x$2" = 'x' ] && exit_with_error "$SYNTAX: USER NEEDED"
+USER="$3"
 id $USER 2>&1 > /dev/null 
 [ $? -eq 0 ] && exit_with_error "USER $USER ALREADY EXISTS"
 param_aliases=3
@@ -71,22 +75,22 @@ if [ $param_aliases -lt $# ]; then
 else
 	param_aliases=0	
 fi
-PWD_FTP="$3"
-[ "x$3" = 'x' -o \( $param_aliases -ne 0 -a $param_aliases -le 3 \) ] && PWD_FTP=$(perl $PATHSCRIPT/subs/pwd_generator.pl 8)
-PWD_MYSQL="$4"
-[ "x$4" = 'x' -o \( $param_aliases -ne 0 -a $param_aliases -le 4 \) ] && PWD_MYSQL=$(perl $PATHSCRIPT/subs/pwd_generator.pl 16)
-[ "x$5" != 'x' -a $param_aliases -gt 5 ] && ADMIN_EMAIL="$5"
-[ "x$6" != 'x' -a $param_aliases -gt 6 ] && HOST_EMAIL="$6"
-[ "x$7" != 'x' -a $param_aliases -gt 7 ] && GRIVE_EMAIL="$7"
-[ "x$8" != 'x' -a $param_aliases -gt 8 ] && GRIVE_DIR="$8"
-[ "x$9" != 'x' -a $param_aliases -gt 9 ] && GRIVE_SUBDIR_BACKUPS="$9"
+PWD_FTP="$4"
+[ "x$4" = 'x' -o \( $param_aliases -ne 0 -a $param_aliases -le 3 \) ] && PWD_FTP=$(perl $PATHSCRIPT/subs/pwd_generator.pl 8)
+PWD_MYSQL="$5"
+[ "x$5" = 'x' -o \( $param_aliases -ne 0 -a $param_aliases -le 4 \) ] && PWD_MYSQL=$(perl $PATHSCRIPT/subs/pwd_generator.pl 16)
+[ "x$6" != 'x' -a $param_aliases -gt 6 ] && ADMIN_EMAIL="$6"
+[ "x$7" != 'x' -a $param_aliases -gt 7 ] && HOST_EMAIL="$7"
+[ "x$8" != 'x' -a $param_aliases -gt 8 ] && GRIVE_EMAIL="$8"
+[ "x$9" != 'x' -a $param_aliases -gt 9 ] && GRIVE_DIR="$9"
+[ "x$10" != 'x' -a $param_aliases -gt 10 ] && GRIVE_SUBDIR_BACKUPS="$10"
 DOMAIN="$(echo "$VHOST" | sed -E 's/([^\.]*\.)*([^\.]*\.[^\.]*)$/\2/')"
 VHOST_SFS="$(echo "$VHOST" | sed -E 's/(\.[^\.]*)$//')"
 echo "CREATE account.txt file"
 sh ./subs/create-account.txt.sh "$VHOST" "$USER" "$PWD_FTP" "$PWD_MYSQL" "$HOST_EMAIL" "$ADMIN_EMAIL" || exit_with_error  "ERROR: CREATING account.txt"
 echo "report 'account.txt' file created"
 echo "CREATE '$USER' account"
-sh ./subs/create-user.sh "$VHOST" || exit_with_error "ERROR: CREATING USER '$USER'"
+sh ./subs/create-user-uid.sh "$UID" "$VHOST" || exit_with_error "ERROR: CREATING USER '$USER'"
 if [ "x$PUBLIC_IP" = "xNONE" ]; then
 	echo "** PUBLIC_IP config is disabled, to enable add \"PUBLIC_IP='xxx.xxx.xxx.xxx'\" with your public ip to your $SETTINGS_FILE"
 fi

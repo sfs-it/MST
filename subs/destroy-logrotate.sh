@@ -1,4 +1,4 @@
-#~/bin/sh
+#!/bin/sh
 #
 # SFS.it Maintenance Server Tools 
 # BSD style KISS scripts
@@ -37,6 +37,6 @@ elif [ "$( uname )" = 'Linux' ]; then
 fi
 
 
-rm "$LOGROTATE_DIR/$APACHE_VERSION-vhost-$VHOST.conf" || exit_with_error "ERROR: erasing logrotate '$APACHE_VERSION-vhost-$VHOST.conf'"
+rm "$LOGROTATE_DIR/vhost-$VHOST.conf" || exit_with_error "ERROR: erasing logrotate 'vhost-$VHOST.conf'"
 cd "$PWD_SRC"
 exit 0

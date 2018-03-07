@@ -1,4 +1,4 @@
-#~/bin/sh
+#!/bin/sh
 #
 # SFS.it Maintenance Server Tools 
 # BSD style KISS scripts
@@ -17,11 +17,10 @@ test -s "/root/SFSit_MST.conf.sh" && SETTINGS_FILE="/root/SFSit_MST.conf.sh"
 if [ -s "$SETTINGS_FILE" ]; then
 	VHOSTS_DIR="$(sh "$SETTINGS_FILE" VHOSTS_DIR)"
 	MYSQL_ROOT_PWD="$(sh "$SETTINGS_FILE" MYSQL_ROOT_PWD)"
-        APACHE_VERSION="$(sh "$SETTINGS_FILE" APACHE_VERSION)"
-
+    APACHE_VERSION="$(sh "$SETTINGS_FILE" APACHE_VERSION)"
 fi
 PWD_SRC="$(pwd)"
-cd $(dirname $0) 
+cd "$(realpath "$(dirname $0)")"
 exit_with_error(){
 	test 'x' != "x$1" && echo "$1"
 	cd "$PWD_SRC"
@@ -35,7 +34,12 @@ VHOST_ACCOUNTFILE="$VHOSTS_DIR/$VHOST/account.txt";
 [ -s "$VHOST_ACCOUNTFILE" ] || exit_with_error "ERROR: CANNOT LOAD 'account.txt' FOR $VHOST"
 
 if [ "$( uname )" = 'FreeBSD' ]; then
-        VHOST_CONFIG_DIR="/usr/local/etc/$APACHE_VERSION/Vhosts"
+    APACHE_DIR="/usr/local/etc/$APACHE_VERSION/Vhosts/$VHOST"
+	[ -f "$APACHE_CONF.conf" ] && rm -f "$APACHE_CONF.conf"
+	[ -f "$APACHE_CONF:ssl.conf" ] && rm -f "$APACHE_CONF:ssl.conf"
+    NGINX_CONF="/usr/local/etc/nginx/Vhosts/$VHOST"
+	[ -f "$NGINX_CONF.conf" ] && rm -f "$NGINX_CONF.conf"
+	[ -f "$NGINX_CONF:ssl.conf" ] && rm -f "$NGINX_CONF:ssl.conf"
 	service $APACHE_VERSION restart || exit_with_error "ERROR: restating $APACHE_VERSION"
 elif [ "$( uname )" = 'Linux' ]; then
         VHOST_CONFIG_DIR='/etc/apache2/sites-available'

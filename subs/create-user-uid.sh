@@ -21,27 +21,30 @@ if [ -s "$SETTINGS_FILE" ]; then
 	WWW_USER="$(sh "$SETTINGS_FILE" WWW_USER)"
 	WWW_GROUP="$(sh "$SETTINGS_FILE" WWW_GROUP)"
 fi
-cd $(dirname $0) 
+cd "$(dirname "$(realpath $0)")"
 exit_with_error(){
 	test 'x' != "x$1" && echo "$1"
 	cd "$PWD_SRC"
 	exit 1
 }
 
-[ "x$1" = 'x' ] && exit_with_error "$SYNTAX : 'VHOST' needed";
-VHOST=$1
+[ "x$1" = 'x' ] && exit_with_error "$SYNTAX : 'UID' needed";
+UID="$1"
+[ "x$2" = 'x' ] && exit_with_error "$SYNTAX : 'VHOST' needed";
+VHOST="$2"
 VHOST_ACCOUNTFILE="$VHOSTS_DIR/$VHOST/account.txt";
 [ -s "$VHOST_ACCOUNTFILE" ] || exit_with_error "ERROR: CANNOT LOAD 'account.txt' FOR $VHOST"
-USER="$(cat $VHOST_ACCOUNTFILE | grep 'USER:' | sed 's/^USER:\s*//' | sed 's/^[[:blank:]]*//g')"
-FTP_PWD="$(cat $VHOST_ACCOUNTFILE | grep 'PWD_FTP:' | sed 's/^PWD_FTP:\s*//' | sed 's/^[[:blank:]]*//g')"
+USER="` cat $VHOST_ACCOUNTFILE | grep 'USER:' | sed 's/^USER:\s*//' | sed 's/^[[:blank:]]*//g' `"
+FTP_PWD="` cat $VHOST_ACCOUNTFILE | grep 'PWD_FTP:' | sed 's/^PWD_FTP:\s*//' | sed 's/^[[:blank:]]*//g' `"
 
 test -d "$VHOSTS_DIR/$VHOST" || mkdir -p "$VHOSTS_DIR/$VHOST"
 if [ "$( uname )" = 'FreeBSD' ]; then
 	WWW_GROUP_ID=`id -g "$WWW_USER"`
-	( echo "$USER::$WWW_GROUP_ID::::$VHOST:$VHOSTS_DIR/$VHOST:/usr/sbin/ftp-only:$FTP_PWD" | adduser -f - ) || \
+	( echo "$USER:$UID:$WWW_GROUP_ID::::$VHOST:$VHOSTS_DIR/$VHOST:/usr/sbin/ftp-only:$FTP_PWD" | adduser -f - ) || \
 		exit_with_error "ERROR: CANNOT CREATE USER" 
-	UID=`id -u "$USER"`
+	[ "uid:$UID"  == "uid:$(id -u "$USER")" ] ||  exit_with_error "ERROR: CANNOT CREATE USER"
 elif [ "$( uname )" = 'Linux' ]; then
+	exit_with_error "NOT TESTED FOR LINUX"
 	useradd -d "$VHOSTS_DIR/$VHOST" -g "$WWW_GROUP" -M -s /usr/sbin/ftp-only "$USER" ||  exit_with_error "ERROR: CANNOT CREATE USER"
 	( echo "$USER:$FTP_PWD" | chpasswd ) || exit_with_error "ERROR: CANNOT CHANGE THE PASSWORD" 
 	UID=`id -u "$USER"`

@@ -1,4 +1,4 @@
-#~/bin/sh
+#!/bin/sh
 #
 # SFS.it Maintenance Server Tools 
 # BSD style KISS scripts
@@ -22,7 +22,7 @@ if [ -s "$SETTINGS_FILE" ]; then
 
 fi
 PWD_SRC="$(pwd)"
-cd $(dirname $0) 
+cd "$(dirname "$(realpath $0)")"
 exit_with_error(){
 	test 'x' != "x$1" && echo "$1"
 	cd "$PWD_SRC"

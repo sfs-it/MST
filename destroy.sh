@@ -24,7 +24,7 @@ if [ -s "$SETTINGS_FILE" ]; then
 	[ "x$GRIVE_SUBDIR_BACKUPS" = "x" ] &&  GRIVE_SUBDIR_BACKUPS="backups"
 fi
 PWD_SRC="$(pwd)"
-cd $(dirname $0) 
+cd "$(dirname "$(realpath $0)")"
 exit_with_error(){
 	test 'x' != "x$1" && echo "$1"
 	cd "$PWD_SRC"
@@ -43,7 +43,7 @@ fi
 
 VHOST_ACCOUNTFILE="$VHOSTS_DIR/$VHOST/account.txt";
 [ -s "$VHOST_ACCOUNTFILE" ] || exit_with_error "ERROR: CANNOT LOAD 'account.txt' FOR $VHOST"
-USER=$(cat $VHOST_ACCOUNTFILE | grep 'USER:' | sed 's/^USER:\s*//')
+USER="$(cat $VHOST_ACCOUNTFILE | grep 'USER:' | sed 's/^USER:\s*//' | sed 's/^[[:blank:]]*//g')"
 ADMIN_EMAIL="$(cat "$VHOST_ACCOUNTFILE"| grep 'ADMIN_EMAIL:' | sed 's/^ADMIN_EMAIL:\s*//')"
 
 if [ "x$BACKUP" = "xBACKUP" ]; then
@@ -61,11 +61,16 @@ echo "logrotate config removed '$VHOST'"
 sh ./subs/destroy-sendmail.sh "$VHOST" || exit_with_error
 echo "sent email to $ADMIN_EMAIL" 
 USER_GRIVE_EMAIL="$(cat $VHOST_ACCOUNTFILE | grep 'GRIVE_EMAIL:' | sed 's/^GRIVE_EMAIL:\s*//')"
-if [ "x$GRIVE_EMAIL" = "x$USER_GRIVE_EMAIL" -o "x" = "x$USER_GRIVE_EMAIL" ]; then
-	removeFlag='-r'
+if [ "$( uname )" = 'FreeBSD' ]; then
+	rmuser -y "$USER" || exit_with_error
+	rm -R "$VHOSTS_DIR/$VHOST"
 else
-	removeFlag=''
+	if [ "x$GRIVE_EMAIL" = "x$USER_GRIVE_EMAIL" -o "x" = "x$USER_GRIVE_EMAIL" ]; then
+		removeFlag='-r'
+	else
+		removeFlag=''
+	fi
+	userdel $removeFlag "$USER" || exit_with_error
 fi
-userdel $removeFlag "$USER" || exit_with_error
 echo "removed user '$USER'"
 exit 1

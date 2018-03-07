@@ -1,4 +1,4 @@
-#~/bin/sh
+#!/bin/sh
 #
 # SFS.it Maintenance Server Tools 
 # BSD style KISS scripts
@@ -50,9 +50,9 @@ VHOST=$1
 
 VHOST_ACCOUNTFILE="$VHOSTS_DIR/$VHOST/account.txt";
 [ -s "$VHOST_ACCOUNTFILE" ] || exit_with_error "ERROR: CANNOT LOAD 'account.txt' FOR $VHOST"
-USER=$(cat $VHOST_ACCOUNTFILE | grep 'USER:' | sed 's/^USER:\s*//' | sed 's/^[[:blank:]]*//g')
-ADMIN_EMAIL=$(cat $VHOST_ACCOUNTFILE | grep 'ADMIN_EMAIL:' | sed 's/^ADMIN_EMAIL:\s*//' | sed 's/^[[:blank:]]*//g')
-VHOST_ONDOMAIN=$(echo $VHOST | sed -E 's/(\.[^\.]*)$//' | sed 's/^[[:blank:]]*//g')
+USER="$(cat $VHOST_ACCOUNTFILE | grep 'USER:' | sed 's/^USER:\s*//' | sed 's/^[[:blank:]]*//g')"
+ADMIN_EMAIL="$(cat $VHOST_ACCOUNTFILE | grep 'ADMIN_EMAIL:' | sed 's/^ADMIN_EMAIL:\s*//' | sed 's/^[[:blank:]]*//g')"
+VHOST_ONDOMAIN="$(echo $VHOST | sed -E 's/(\.[^\.]*)$//' | sed 's/^[[:blank:]]*//g')"
 
 get_host(){
 	if [ "x$1" != 'x' ]; then
@@ -78,52 +78,53 @@ change_1st_level_domain(){
 	fi
 }
 
+SERVER_ALIASES=""
+VHOST_HOSTNAME_ALIASES=""
+add_aliases(){
+	VHOST_ALIAS="$(echo $1 | sed 's/^[[:blank:]]*//g')"
+	if [ "x$VHOST_ALIAS" != "x" -a "x$VHOST_ALIAS" != "x$VHOST_HOSTNAME" ]; then
+		PRESENCE_CHECK=$(printf "$SERVER_ALIASES" | grep "ServerAlias $VHOST_ALIAS")
+		if [ "x$PRESENCE_CHECK" = "x" ]; then
+			HOST_ALIAS="$(get_host $VHOST_ALIAS)"
+			SERVER_ALIASES="$SERVER_ALIASES\tServerAlias $VHOST_ALIAS\n"
+			VHOST_HOSTNAME_ALIASES="$VHOST_HOSTNAME_ALIASES $VHOST_ALIAS"
+			echo "ADD HOSTNAME '$VHOST_ALIAS' to Server Aliases"
+			if [ ${#VHOST_ALIAS} -gt 4 -a "x$HOST_ALIAS" = 'xwww' ]; then
+				ALIAS_DOMAIN="$(get_domain $VHOST_ALIAS)"
+				PRESENCE_CHECK=$(printf "$SERVER_ALIASES" | grep "ServerAlias $ALIAS_DOMAIN")
+				if [ "x$ALIAS_DOMAIN" != "x" -a "x$PRESENCE_CHECK" = "x" ]; then
+					SERVER_ALIASES="$SERVER_ALIASES\tServerAlias $ALIAS_DOMAIN\n"
+					VHOST_HOSTNAME_ALIASES="$VHOST_HOSTNAME_ALIASES $ALIAS_DOMAIN"
+					echo "ADD DOMAIN '$ALIAS_DOMAIN' to Server Aliases"
+				fi
+			fi
+		fi
+	fi
+}
+
+[ "x$(get_1st_level_domain $VHOST)" = 'local' ] || \
+	add_aliases "$(change_1st_level_domain $VHOST 'local')"
 DOMAIN="$(get_domain $VHOST)"
 if [ "x$DEVEL_DOMAIN" != 'x' -a "x$DOMAIN" != "x$DEVEL_DOMAIN" ]; then
-	VHOST_HOSTNAME="$(change_1st_level_domain $VHOST $DEVEL_DOMAIN)"
-	echo "DEVELOPMENT DOMAIN change '$VHOST' in '$VHOST_HOSTNAME'"
+	ALIAS_DEVEL_DOMAIN="$(change_1st_level_domain $VHOST $DEVEL_DOMAIN)"
+	echo "DEVELOPMENT DOMAIN add '$VHOST' in '$ALIAS_DEVEL_DOMAIN'"
+	add_aliases "$ALIAS_DEVEL_DOMAIN"
 	DOMAIN="$(get_domain $VHOST_HOSTNAME)"
 else
 	VHOST_HOSTNAME=$VHOST
 fi
 HOST="$(get_host $VHOST)"
 if [ "x$DOMAIN" != "x" -a \( "x$HOST" = "xwww" \) ]; then
-        SERVER_ALIASES="\tServerAlias $DOMAIN\n"
-	VHOST_HOSTNAME_ALIASES=" $DOMAIN"
+	SERVER_ALIASES="$SERVER_ALIASES\tServerAlias $DOMAIN\n"
+	VHOST_HOSTNAME_ALIASES="$VHOST_HOSTNAME_ALIASES $DOMAIN"
 	echo "ADD DOMAIN '$DOMAIN' to Server Aliases"
-else
-        SERVER_ALIASES=""
-	VHOST_HOSTNAME_ALIASES=""
 fi
+	
 while [ "x$2" != "x" ]; do
-#        if [ "x$DEVEL_DOMAIN" != 'x' -a "x$DOMAIN" != "x$DEVEL_DOMAIN" ]; then
-#                VHOST_ALIAS="$(change_1st_level_domain $2 $DEVEL_DOMAIN)"
-#                echo "DEVELOPMENT DOMAIN change '$2' in '$VHOST_ALIAS'"
-#        else
-#                VHOST_ALIAS=$2
-#        fi
-	VHOST_ALIAS=$2
-        if [ "x$VHOST_ALIAS" != "x$VHOST_HOSTNAME" ]; then
-                PRESENCE_CHECK=$(printf "$SERVER_ALIASES" | grep "ServerAlias $VHOST_ALIAS")
-                if [ "x$PRESENCE_CHECK" = "x" ]; then
-			HOST_ALIAS="$(get_host $VHOST_ALIAS)"
-                        SERVER_ALIASES="$SERVER_ALIASES\tServerAlias $VHOST_ALIAS\n"
-			VHOST_HOSTNAME_ALIASES="$VHOST_HOSTNAME_ALIASES $VHOST_ALIAS"
-			echo "ADD HOSTNAME '$VHOST_ALIAS' to Server Aliases"
-                        if [ ${#VHOST_ALIAS} -gt 4 -a "x$HOST_ALIAS" = 'xwww' ]; then
-				ALIAS_DOMAIN="$(get_domain $VHOST_ALIAS)"
-                                PRESENCE_CHECK=$(printf "$SERVER_ALIASES" | grep "ServerAlias $ALIAS_DOMAIN")
-                                if [ "x$ALIAS_DOMAIN" != "x" -a "x$PRESENCE_CHECK" = "x" ]; then
-                                        SERVER_ALIASES="$SERVER_ALIASES\tServerAlias $ALIAS_DOMAIN\n"
-					VHOST_HOSTNAME_ALIASES="$VHOST_HOSTNAME_ALIASES $ALIAS_DOMAIN"
-					echo "ADD DOMAIN '$ALIAS_DOMAIN' to Server Aliases"
-                                fi
-                        fi
-                fi
-        fi
-        shift
+	add_aliases $2
+	shift
 done
-SERVER_ALIASES=$(printf "$SERVER_ALIASES" | tr '\n' '\r')
+SERVER_ALIASES="$(printf "$SERVER_ALIASES" | tr '\n' '\r')"
 
 nginx_template(){
 	 cat "../templates/$WEBSERVER/nginx-vhost.conf.tpl" \
