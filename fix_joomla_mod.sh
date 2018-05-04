@@ -51,6 +51,7 @@ find tmp/* ! -type d -exec chmod $CHMOD_OPTIONS 660 {} \;
 if [ -d cache ]; then
 	echo 'FIX cache'
     chown -R $CHOWN_OPTIONS -R $WWW_USER:$WWW_GROUP cache
+    chmod $CHOWN_OPTIONS 770 cache
     find cache/* -type d -exec chmod $CHMOD_OPTIONS 770 {} \;
     find cache/* ! -type d -exec chmod $CHMOD_OPTIONS 660 {} \;
 	echo 'FIX administrator/cache/'
