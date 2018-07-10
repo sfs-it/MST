@@ -81,21 +81,23 @@ change_1st_level_domain(){
 SERVER_ALIASES=""
 VHOST_HOSTNAME_ALIASES=""
 add_aliases(){
-	VHOST_ALIAS="$(echo $1 | sed 's/^[[:blank:]]*//g')"
+	VHOST_ALIAS="$(echo $1 | sed 's/^[[:blank:]]*//g' | sed 's/[[:blank:]]*$//g')"
 	if [ "x$VHOST_ALIAS" != "x" -a "x$VHOST_ALIAS" != "x$VHOST_HOSTNAME" ]; then
 		PRESENCE_CHECK=$(printf "$SERVER_ALIASES" | grep "ServerAlias $VHOST_ALIAS")
 		if [ "x$PRESENCE_CHECK" = "x" ]; then
 			HOST_ALIAS="$(get_host $VHOST_ALIAS)"
-			SERVER_ALIASES="$SERVER_ALIASES\tServerAlias $VHOST_ALIAS\n"
-			VHOST_HOSTNAME_ALIASES="$VHOST_HOSTNAME_ALIASES $VHOST_ALIAS"
-			echo "ADD HOSTNAME '$VHOST_ALIAS' to Server Aliases"
-			if [ ${#VHOST_ALIAS} -gt 4 -a "x$HOST_ALIAS" = 'xwww' ]; then
-				ALIAS_DOMAIN="$(get_domain $VHOST_ALIAS)"
-				PRESENCE_CHECK=$(printf "$SERVER_ALIASES" | grep "ServerAlias $ALIAS_DOMAIN")
-				if [ "x$ALIAS_DOMAIN" != "x" -a "x$PRESENCE_CHECK" = "x" ]; then
-					SERVER_ALIASES="$SERVER_ALIASES\tServerAlias $ALIAS_DOMAIN\n"
-					VHOST_HOSTNAME_ALIASES="$VHOST_HOSTNAME_ALIASES $ALIAS_DOMAIN"
-					echo "ADD DOMAIN '$ALIAS_DOMAIN' to Server Aliases"
+			if [ "x$VHOST_ALIAS" != "x" ]; then
+				SERVER_ALIASES="$SERVER_ALIASES\tServerAlias $VHOST_ALIAS\n"
+				VHOST_HOSTNAME_ALIASES="$VHOST_HOSTNAME_ALIASES $VHOST_ALIAS"
+				echo "ADD HOSTNAME '$VHOST_ALIAS' to Server Aliases"
+				if [ ${#VHOST_ALIAS} -gt 4 -a "x$HOST_ALIAS" = 'xwww' ]; then
+					ALIAS_DOMAIN="$(get_domain $VHOST_ALIAS)"
+					PRESENCE_CHECK=$(printf "$SERVER_ALIASES" | grep "ServerAlias $ALIAS_DOMAIN")
+					if [ "x$ALIAS_DOMAIN" != "x" -a "x$PRESENCE_CHECK" = "x" ]; then
+						SERVER_ALIASES="$SERVER_ALIASES\tServerAlias $ALIAS_DOMAIN\n"
+						VHOST_HOSTNAME_ALIASES="$VHOST_HOSTNAME_ALIASES $ALIAS_DOMAIN"
+						echo "ADD DOMAIN '$ALIAS_DOMAIN' to Server Aliases"
+					fi
 				fi
 			fi
 		fi
@@ -110,11 +112,10 @@ if [ "x$DEVEL_DOMAIN" != 'x' -a "x$DOMAIN" != "x$DEVEL_DOMAIN" ]; then
 	echo "DEVELOPMENT DOMAIN add '$VHOST' in '$ALIAS_DEVEL_DOMAIN'"
 	add_aliases "$ALIAS_DEVEL_DOMAIN"
 	DOMAIN="$(get_domain $VHOST_HOSTNAME)"
-else
-	VHOST_HOSTNAME=$VHOST
 fi
+VHOST_HOSTNAME=$VHOST
 HOST="$(get_host $VHOST)"
-if [ "x$DOMAIN" != "x" -a \( "x$HOST" = "xwww" \) ]; then
+if [ "x$(echo -n $DOMAIN | sed 's/^[[:blank:]]*//g' | sed 's/[[:blank:]]*$//g' )" != "x" -a \( "x$HOST" = "xwww" \) ]; then
 	SERVER_ALIASES="$SERVER_ALIASES\tServerAlias $DOMAIN\n"
 	VHOST_HOSTNAME_ALIASES="$VHOST_HOSTNAME_ALIASES $DOMAIN"
 	echo "ADD DOMAIN '$DOMAIN' to Server Aliases"
@@ -160,6 +161,7 @@ apache_template(){
 		| sed -E "s#\\{\\\$SERVER_ALIASES\\}#$SERVER_ALIASES#g" \
 		| sed -E "s#\\{\\\$APACHE_HTTP\\}#$APACHE_HTTP#g" \
 		| sed -E "s#\\{\\\$APACHE_HTTPS\\}#$APACHE_HTTPS#g" \
+		| sed -E "s#\\tServerAlias\s+\$##g" \
 		| tr '\r' '\n' 
 }
 

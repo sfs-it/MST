@@ -96,7 +96,7 @@ if [ "x$PUBLIC_IP" = "xNONE" ]; then
 fi
 sh ./subs/add-vhost-to-hosts.sh "$VHOST" $VHOST_ALIASES || exit_with_error "ERROR: ADDING $VHOST and $VHOST_ALIASES to /etc/hosts"
 echo "CREATE $VHOST in $VHOSTS_DIR of $HOSTNAME for $USER with ftp password '$PWD_FTP' and mysql password: '$PWD_MYSQL'"
-sh ./subs/create-vhost.sh "$VHOST" $VHOST_ALIASES || exit_with_error "ERROR: CREATING VHOST '$VHOST'"
+sh -x ./subs/create-vhost.sh "$VHOST" $VHOST_ALIASES || exit_with_error "ERROR: CREATING VHOST '$VHOST'"
 echo "vhost '$VHOST' created"
 if [ "x$MYSQL_ENABLED" = "xYES" ]; then
 	echo "CREATE $VHOST DATABASE (named $USER)"

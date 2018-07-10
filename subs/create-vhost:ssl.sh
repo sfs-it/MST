@@ -80,12 +80,11 @@ if [ "x$DEVEL_DOMAIN" != 'x' -a "x$DOMAIN" != "x$DEVEL_DOMAIN" ]; then
         VHOST_HOSTNAME="$(change_1st_level_domain $VHOST $DEVEL_DOMAIN)"
         echo "DEVELOPMENT DOMAIN change '$VHOST' in '$VHOST_HOSTNAME'"
 	DOMAIN="$(get_domain $VHOST_HOSTNAME)"
-else
-        VHOST_HOSTNAME=$VHOST
 fi
+VHOST_HOSTNAME=$VHOST
 VHOSTs_SSL=$VHOST_HOSTNAME
 CERTBOT_PARAMS=" -d $VHOST_HOSTNAME"
-if [ "x$DOMAIN" != "x" -a \( "x$( get_host $VHOST )" = "xwww" \) ]; then
+if [ "x$(echo -n $DOMAIN  | sed 's/^[[:blank:]]*//g' | sed 's/[[:blank:]]*$//g')" != "x" -a \( "x$( get_host $VHOST )" = "xwww" \) ]; then
 	VHOSTs_SSL="$VHOSTs_SSL,$DOMAIN"
 	SERVER_ALIASES="\tServerAlias $DOMAIN\n"
 	VHOST_HOSTNAME_ALIASES=" $DOMAIN"
