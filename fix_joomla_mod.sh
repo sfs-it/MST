@@ -1,34 +1,82 @@
 #!/bin/sh
+#
+# SFS.it Maintenance Server Tools 
+# BSD style KISS scripts
+#
+# UPDATE USER OWN:GRP on a VHOST
+#
+# Written by Agostino Zanutto (agostino@sfs.it) for SFS.it MST
+#
+
+# USAGE fix_joomla_mod.sh VHOST
+BASESCRIPT="$(basename $0)"
+SYNTAX="$BASESCRIPT VHOST [DEVEL]"
+
+PWD_SRC="$(pwd)"
+
+SETTINGS_FILE="/etc/SFSit_MST.conf.sh"
+test -s "/root/SFSit_MST.conf.sh" && SETTINGS_FILE="/root/SFSit_MST.conf.sh"
+if [ -s "$SETTINGS_FILE" ]; then
+	VHOSTS_DIR="$(sh "$SETTINGS_FILE" VHOSTS_DIR)"
+	WWW_USER="$(sh "$SETTINGS_FILE" WWW_USER)"
+	WWW_GROUP="$(sh "$SETTINGS_FILE" WWW_GROUP)"
+	HTTPDOCS_DIR="$(sh "$SETTINGS_FILE" HTTPDOCS_DIR)"
+fi
+cd $(dirname $0) 
+exit_with_error(){
+	test 'x' != "x$1" && echo "$1"
+	cd "$PWD_SRC"
+	exit 1
+}
+
+
+[ "x$1" = 'x' ] && exit_with_error "$SYNTAX : 'VHOST' needed";
+VHOST=$1
+VHOST_ACCOUNTFILE="$VHOSTS_DIR/$VHOST/account.txt";
+[ -s "$VHOST_ACCOUNTFILE" ] || exit_with_error "ERROR: CANNOT LOAD 'account.txt' FOR $VHOST"
+if [ "x$2" = 'x' ]; then
+	USER="$(cat $VHOST_ACCOUNTFILE | grep 'USER:' | sed 's/^USER:\s*//' | sed 's/^[[:blank:]]*//g')"
+else
+	USER=$2
+fi
 
 if [ "$( uname )" = 'FreeBSD' ]; then
 	CHMOD_OPTIONS=''
 	CHOWN_OPTIONS=''
-	WWW_USER='www'
-	WWW_GROUP='www'
 elif [ "$( uname )" = 'Linux' ]; then
 	CHMOD_OPTIONS='-c'
 	CHOWN_OPTIONS='-c'
-	WWW_USER='$WWW_USER'
-	WWW_GROUP='$WWW_USER'
 fi
 
-if [ "x$1" = "xDEVEL" ]; then
+
+
+cd "$VHOSTS_DIR/$VHOST/$HTTPDOCS_DIR"
+USE_FTP=$(cat configuration.php | grep ftp_enable | grep -v -E -e '\s*\/\/' | sed -E -e "s/([^']*')([^'])('.*)/\2/")
+if [ "x$USER" = "xDEVEL" ]; then
     chown $CHOWN_OPTIONS -R $WWW_USER .
     find . ! -type f -exec chmod $CHMOD_OPTIONS 770 '{}' \;
     find . -type f -exec chmod $CHMOD_OPTIONS 660 '{}' \;
+	if ["x$USE_FTP" = "x1"]; then
+		cat configuration.php | sed -e "s/ftp_enable = '1';/ftp_enable = '0';/" > "/tmp/{$VHOST}configuration.php"
+		rm configuration.php
+		mv "/tmp/{$VHOST}configuration.php" configuration.php
+		chown $CHOWN_OPTIONS -R $WWW_USER configuration.php
+	fi
     exit
-fi
-if [ "x$1" = "x" ]; then
-        user="`whoami`"
 else
-        user="$1"
+	if ["x$USE_FTP" = "x0"]; then
+		cat configuration.php | sed -e "s/ftp_enable = '0';/ftp_enable = '1';/" > "/tmp/{$VHOST}configuration.php"
+		rm configuration.php
+		mv "/tmp/{$VHOST}configuration.php" configuration.php
+	fi
 fi
+
 echo 'FIX ALL FILES VHOST MOD'
 find . ! -type f -exec chmod $CHMOD_OPTIONS 750 '{}' \;
 echo 'FIX ALL DIRS VHOST MOD'
 find . -type f -exec chmod $CHMOD_OPTIONS 640 '{}' \;
 echo 'FIX ALL DIRS VHOST OWN'
-find . -exec chown $CHOWN_OPTIONS "$user":$WWW_USER '{}' \;
+find . -exec chown $CHOWN_OPTIONS "$USER":$WWW_USER '{}' \;
 if [ -d logs ]; then
 	echo 'FIX logs/'
     chmod $CHMOD_OPTIONS -R 770 logs 
@@ -130,3 +178,5 @@ if [ -d "cache/widgetkit" ]; then
     find cache/widgetkit ! -type f -exec chmod $CHMOD_OPTIONS 770 '{}' \;
     find cache/widgetkit -type f -exec chmod $CHMOD_OPTIONS 660 '{}' \;
 fi
+cd "$PWD_SRC"
+exit 0

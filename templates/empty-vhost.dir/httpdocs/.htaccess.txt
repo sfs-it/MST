@@ -50,7 +50,7 @@ RewriteRule ^sitemap.xml /index.php?option=com_xmap&view=xml [R=301,L]
 ############# Use this section if you are using a 3rd party (Non Joomla! core) SEF extension - e.g. OpenSEF, 404_SEF, 404SEFx, SEF Advance, etc
 #
 RewriteCond %{REQUEST_URI} ^(/component/option,com) [NC,OR] ##optional - see notes##
-RewriteCond %{REQUEST_URI} (/|\.htm|\.php|\.html|/[^.]*)$ [NC]
+RewriteCond %{REQUEST_URI} (/|\.htm|\.php|\.html|\.json|/[^.]*)$ [NC]
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule (.*) index.php
