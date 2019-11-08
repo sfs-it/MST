@@ -51,23 +51,25 @@ fi
 
 
 cd "$VHOSTS_DIR/$VHOST/$HTTPDOCS_DIR"
-USE_FTP=$(cat configuration.php | grep ftp_enable | grep -v -E -e '\s*\/\/' | sed -E -e "s/([^']*')([^'])('.*)/\2/")
+USE_FTP="$(cat configuration.php | grep ftp_enable | grep -v -E -e '\s*\/\/' | sed -E -e "s/([^']*')([^'])('.*)/\2/")"
 if [ "x$USER" = "xDEVEL" ]; then
     chown $CHOWN_OPTIONS -R $WWW_USER .
     find . ! -type f -exec chmod $CHMOD_OPTIONS 770 '{}' \;
     find . -type f -exec chmod $CHMOD_OPTIONS 660 '{}' \;
-	if ["x$USE_FTP" = "x1"]; then
-		cat configuration.php | sed -e "s/ftp_enable = '1';/ftp_enable = '0';/" > "/tmp/{$VHOST}configuration.php"
+	if [ "x$USE_FTP" = "x1" ]; then
+		echo 'SET CONFIGURATION FTP ON'
+		cat configuration.php | sed -e "s/ftp_enable = '1';/ftp_enable = '0';/" > "/tmp/${VHOST}-configuration.php"
 		rm configuration.php
-		mv "/tmp/{$VHOST}configuration.php" configuration.php
+		mv "/tmp/${VHOST}-configuration.php" configuration.php
 		chown $CHOWN_OPTIONS -R $WWW_USER configuration.php
 	fi
     exit
 else
-	if ["x$USE_FTP" = "x0"]; then
-		cat configuration.php | sed -e "s/ftp_enable = '0';/ftp_enable = '1';/" > "/tmp/{$VHOST}configuration.php"
+	if [ "x$USE_FTP" = "x0" ]; then
+		echo 'SET CONFIGURATION FTP'
+		cat configuration.php | sed -e "s/ftp_enable = '0';/ftp_enable = '1';/" > "/tmp/${VHOST}-configuration.php"
 		rm configuration.php
-		mv "/tmp/{$VHOST}configuration.php" configuration.php
+		mv "/tmp/${VHOST}-configuration.php" configuration.php
 	fi
 fi
 

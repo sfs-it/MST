@@ -47,11 +47,12 @@ fi
 cd "$VHOSTS_DIR/$VHOST/$HTTPDOCS_DIR"
 USE_FTP=$(cat configuration.php | grep ftp_enable | grep -v -E -e '\s*\/\/' | sed -E -e "s/([^']*')([^'])('.*)/\2/")
 if [ "x$USE_FTP" = "x0" ]; then
+	echo 'USE FTP OFF'
 	USER=$WWW_USER
 fi
 
-echo "CREATE .gz of css and js for all files of dir $VHOSTS_DIR/$VHOST/$HTTPDOCS_DIR/media/"
-echo "USER: $WWW_USER:$WWW_GROUP"
+echo "CREATE static compressed .gz copy of of css,js and html files when needed in $VHOSTS_DIR/$VHOST/$HTTPDOCS_DIR/media/"
+echo "USER: ${USER}:${WWW_GROUP}"
 find ./media \
 	-type file -size +1000c \
 	\( -name "*.css" -o -name "*.js" -o -name "*.html" \) \
@@ -60,7 +61,7 @@ find ./media \
 			-exec echo "{} => {}.gz" \; \
 			-exec gzip -k -f "{}" \; \
 			-exec chmod $CHMOD_OPTIONS 640 "{}.gz" \; \
-			-exec chown $CHOWN_OPTIONS "$USER":"$WWW_USER" "{}.gz" \; \
+			-exec chown $CHOWN_OPTIONS ${USER}:${WWW_GROUP} "{}.gz" \; \
 		\) \
 	\)
 cd "$PWD_SRC"
