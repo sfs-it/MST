@@ -8,7 +8,6 @@ server {
         gzip_comp_level   2;
         gzip_http_version 1.0;
         gzip_proxied      any;
-        gzip_min_length   1100;
         gzip_buffers      16 8k;
         gzip_types        text/plain text/css application/javascript application/x-javascript text/javascript text/xml application/xml application/xml+rss;
 #        gzip_proxied      no-cache no-store private expired auth;
@@ -28,6 +27,15 @@ server {
                 gzip           off;
 				gzip_static    off;
                 expires        max;
+                try_files      $uri @fallback;
+            }
+			
+            location ~* ^.+\.(js|json|htm|html|txt|csv|rtf|doc|docx|xls|xlsx|ppt|pptx|odf|odp|ods|odt)$ {
+                access_log {$VHOSTS_DIR}/{$VHOST}/{$HTTPLOGS_DIR}/access-nginx.log main;
+                gzip           on;
+                gzip_static    on;
+                expires        max;
+
                 try_files      $uri @fallback;
             }
 

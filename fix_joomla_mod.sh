@@ -53,10 +53,10 @@ fi
 cd "$VHOSTS_DIR/$VHOST/$HTTPDOCS_DIR"
 USE_FTP="$(cat configuration.php | grep ftp_enable | grep -v -E -e '\s*\/\/' | sed -E -e "s/([^']*')([^'])('.*)/\2/")"
 if [ "x$USER" = "xDEVEL" ]; then
-	echo 'FIX ALL FILES TO $WWW_USER:$WWW_USER files to 660 / dir to 660'
+	echo "FIX ALL FILES TO $WWW_USER:$WWW_USER files to 660 / dir to 770"
     chown $CHOWN_OPTIONS -R $WWW_USER .
-    find . ! -type f -exec chmod $CHMOD_OPTIONS 770 '{}' \;
-    find . -type f -exec chmod $CHMOD_OPTIONS 660 '{}' \;
+    find . ! -type f -exec chmod $CHMOD_OPTIONS 770 '{}' \; \
+			-o -exec chmod $CHMOD_OPTIONS 660 '{}' \;
 	if [ "x$USE_FTP" = "x1" ]; then
 		echo 'SET CONFIGURATION FTP OFF'
 		cat configuration.php | sed -e "s/ftp_enable = '1';/ftp_enable = '0';/" > "/tmp/${VHOST}-configuration.php"
@@ -75,7 +75,9 @@ else
 fi
 
 echo 'FIX ALL FILES VHOST MOD files 640 / dir 750'
-find . -exec chown $CHOWN_OPTIONS "$USER":$WWW_USER '{}' -type f  \( -exec chmod $CHMOD_OPTIONS 640 '{}' \) -o -exec chmod $CHMOD_OPTIONS 750 '{}' \;
+find . -exec chown $CHOWN_OPTIONS "$USER":$WWW_USER '{}' \; \
+	-type f  -exec chmod $CHMOD_OPTIONS 640 '{}' \; \
+	-o -exec chmod $CHMOD_OPTIONS 750 '{}' \;
 if [ -d logs ]; then
 	echo 'FIX logs/'
     chmod $CHMOD_OPTIONS -R 770 logs 
