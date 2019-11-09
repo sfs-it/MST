@@ -58,7 +58,7 @@ else
 	echo 'USE FTP OFF'
 	USER=$WWW_USER
 fi
-ext=$(echo $JOOMLA_UPDATE_FILE | sed -E 's/.*(\.(tar\.)?.*)$/\1/')
+ext="$(echo $JOOMLA_UPDATE_FILE | sed -E 's/.*(\.tar\.gz|\.tar\.bz|\.tar.gz\.bz2|\.zip)$/\1/')"
 if [ "x$ext" = "x.zip" ]; then
 	unzip -o  "$PWD_SRC/$JOOMLA_UPDATE_FILE"
 elif [ "x$ext" = "x.tar.gz" -o "x$ext" = "x.tgz" ]; then
