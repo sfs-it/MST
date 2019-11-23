@@ -15,19 +15,19 @@
 		AllowOverride None
 	</Directory>
 	<Directory {$VHOSTS_DIR}/{$VHOST}/{$HTTPDOCS_DIR}>
-                AllowOverride FileInfo AuthConfig Limit Indexes
-                Options MultiViews Indexes SymLinksIfOwnerMatch IncludesNoExec FollowSymLinks
-                AllowOverrideList Redirect RedirectMatch
-                Require method GET POST OPTIONS
-        </Directory>
+			AllowOverride FileInfo AuthConfig Limit Indexes
+			Options MultiViews Indexes SymLinksIfOwnerMatch IncludesNoExec FollowSymLinks
+			AllowOverrideList Redirect RedirectMatch
+			Require method GET POST OPTIONS
+	</Directory>
 
 
-        ScriptAlias /cgi-bin/ /usr/lib/cgi-bin/
-        <Directory "/usr/lib/cgi-bin">
-                AllowOverride None
-                Options +ExecCGI -MultiViews +SymLinksIfOwnerMatch
-                Require all granted
-        </Directory>
+	ScriptAlias /cgi-bin/ /usr/lib/cgi-bin/
+	<Directory "/usr/lib/cgi-bin">
+			AllowOverride None
+			Options +ExecCGI -MultiViews +SymLinksIfOwnerMatch
+			Require all granted
+	</Directory>
 
 	ErrorLog {$VHOSTS_DIR}/{$VHOST}/{$HTTPLOGS_DIR}/error-apache.log
 	# Possible values include: debug, info, notice, warn, error, crit, alert, emerg.

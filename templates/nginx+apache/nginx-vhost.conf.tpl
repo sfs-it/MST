@@ -17,7 +17,6 @@ server {
 
         location / {
             root {$VHOSTS_DIR}/{$VHOST}/{$HTTPDOCS_DIR};
-
             proxy_pass http://{$VHOST}.local:{$APACHE_HTTP};
             include /usr/local/etc/nginx/proxy.conf;
             # include /usr/local/etc/nginx/proxy_cache.conf;
@@ -26,6 +25,7 @@ server {
 				access_log {$VHOSTS_DIR}/{$VHOST}/{$HTTPLOGS_DIR}/access-nginx.log main;
                 gzip           off;
 				gzip_static    off;
+				
                 expires        max;
                 try_files      $uri @fallback;
             }
@@ -34,8 +34,8 @@ server {
                 access_log {$VHOSTS_DIR}/{$VHOST}/{$HTTPLOGS_DIR}/access-nginx.log main;
                 gzip           on;
                 gzip_static    on;
+				
                 expires        max;
-
                 try_files      $uri @fallback;
             }
 
@@ -44,6 +44,7 @@ server {
                 gzip           off;
 				gzip_static    off;
                 allow all;
+				
                 try_files $uri =404;
             }
         }
@@ -51,6 +52,7 @@ server {
         location @fallback {
             gzip           off;
 			gzip_static    off;
+			
             proxy_pass     http://{$VHOST}.local:{$APACHE_HTTP};
             include        /usr/local/etc/nginx/proxy.conf;
             # include      /usr/local/etc/nginx/proxy_cache.conf;
