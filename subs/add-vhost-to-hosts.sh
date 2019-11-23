@@ -123,6 +123,6 @@ done
 
 
 echo 'ADD PUBLIC IP VHOST and ALIASES to /etc/hosts'
-printf "\n\n## VHOST IPs ${VHOST} ##\n${IP}\t${VHOST}.local\n${SERVER_IP}\t$VHOST_HOSTNAME$SERVER_ALIASES" >> /etc/hosts 
+printf "\n\n## VHOST IPs ${VHOST} (SERVER IP:${IP})##\n${SERVER_IP}\t${VHOST}.local\n${SERVER_IP}\t$VHOST_HOSTNAME$SERVER_ALIASES" >> /etc/hosts 
 cd "$PWD_SRC"
 exit 0
