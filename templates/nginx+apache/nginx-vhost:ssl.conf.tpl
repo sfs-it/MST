@@ -13,7 +13,7 @@ server {
         gzip_http_version 1.0;
         gzip_proxied      any;
         gzip_buffers      16 8k;
-        gzip_types        text/plain text/css application/javascript application/x-javascript text/javascript text/xml application/xml application/xml+rss;
+        gzip_types        text/plain text/css application/javascript application/x-javascript text/javascript text/xml application/xml application/xml+rss text/x-sass text/x-scss;
 #        gzip_proxied      no-cache no-store private expired auth;
         gzip_min_length   1000;
         gzip_disable      "MSIE [1-6].(?!.*SV1)";
@@ -31,7 +31,7 @@ server {
                 try_files      $uri @fallback;
             }
 
-            location ~* ^.+\.(js|json|htm|html|txt|csv|rtf|doc|docx|xls|xlsx|ppt|pptx|odf|odp|ods|odt)$ {
+            location ~* ^.+\.(js|json|htm|html|txt|css|scss|csv|rtf|doc|docx|xls|xlsx|ppt|pptx|odf|odp|ods|odt)$ {
                 access_log {$VHOSTS_DIR}/{$VHOST}/{$HTTPLOGS_DIR}/access-nginx.log main;
                 gzip              on;
                 gzip_static       on;
