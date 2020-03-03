@@ -20,29 +20,31 @@ if [ -s "$SETTINGS_FILE" ]; then
 	HTTPDOCS_DIR="$(sh "$SETTINGS_FILE" HTTPDOCS_DIR)"
 	ADMIN_EMAIL="$(sh "$SETTINGS_FILE" ADMIN_EMAIL)"
 	HOST_EMAIL="$(sh "$SETTINGS_FILE" HOST_EMAIL)"
+	MYSQL_SERVER="$(sh "$SETTINGS_FILE" MYSQL_SERVER)"
+	[ "x$MYSQL_SERVER" = 'x' ] && MYSQL_SERVER='localhost'
 	APACHE_ENABLED="$(sh "$SETTINGS_FILE" APACHE_ENABLED)"
-	[ "x$APACHE_ENABLED" = "x" ] && APACHE_ENABLED='NO'
+	[ "x$APACHE_ENABLED" = 'x' ] && APACHE_ENABLED='NO'
 	APACHE_CONF="$(sh "$SETTINGS_FILE" APACHE_CONF)"
-	[ "x$APACHE_CONF" = "x" ] && APACHE_CONF='SAVE'
+	[ "x$APACHE_CONF" = 'x' ] && APACHE_CONF='SAVE'
 	NGINX_ENABLED="$(sh "$SETTINGS_FILE" NGINX_ENABLED)"
-	[ "x$NGINX_ENABLED" = "x" ] && NGINX_ENABLED='NO'
+	[ "x$NGINX_ENABLED" = 'x' ] && NGINX_ENABLED='NO'
 	NGINX_CONF="$(sh "$SETTINGS_FILE" NGINX_CONF)"
-	[ "x$NGINX_CONF" = "x" ] && NGINX_CONF='SAVE'
+	[ "x$NGINX_CONF" = 'x' ] && NGINX_CONF='SAVE'
 	SAMBA_ENABLED="$(sh "$SETTINGS_FILE" SAMBA_ENABLED)"
-	[ "x$SAMBA_ENABLED" = "x" ] && SAMBA_ENABLED='NO'
+	[ "x$SAMBA_ENABLED" = 'x' ] && SAMBA_ENABLED='NO'
 	SAMBA_CONF="$(sh "$SETTINGS_FILE" SAMBA_CONF)"
-	[ "x$SAMBA_CONF" = "x" ] && SAMBA_CONF='SAVE'
+	[ "x$SAMBA_CONF" = 'x' ] && SAMBA_CONF='SAVE'
 	GRIVE_EMAIL="$(sh "$SETTINGS_FILE" GRIVE_EMAIL)"
 	GRIVE_DIR="$(sh "$SETTINGS_FILE" GRIVE_DIR)"
 	GRIVE_SUBDIR_BACKUPS="$( sh "$SETTINGS_FILE" GRIVE_SUBDIR_BACKUPS | sed -E 's;^(/*)(.*[^/])*(/*)$;\2;g' )"
 	
-	[ "x$GRIVE_DIR" = "x" ] &&  GRIVE_DIR="$VHOSTS_DIR/gDrive"
-	[ "x$GRIVE_SUBDIR_BACKUPS" = "x" ] &&  GRIVE_SUBDIR_BACKUPS="backups"
-	[ "x$GRIVE_DIR" != "x" -a ! -e "$GRIVE_DIR" ] && \
+	[ "x$GRIVE_DIR" = 'x' ] &&  GRIVE_DIR="$VHOSTS_DIR/gDrive"
+	[ "x$GRIVE_SUBDIR_BACKUPS" = 'x' ] &&  GRIVE_SUBDIR_BACKUPS="backups"
+	[ "x$GRIVE_DIR" != 'x' -a ! -e "$GRIVE_DIR" ] && \
 	( 	mkdir -p "$GRIVE_DIR" && \
 		chgrp "$WWW_GROUP" "$GRIVE_DIR" )
 	GRIVE_SUBDIR_RSYNC="$( sh "$SETTINGS_FILE" GRIVE_SUBDIR_RSYNC | sed -E 's;^(/*)(.*[^/])*(/*)$;\2;g' )"
-	[ "x$GRIVE_SUBDIR_RSYNC" = "x" ] &&  GRIVE_SUBDIR_RSYNC="rsync"
+	[ "x$GRIVE_SUBDIR_RSYNC" = 'x' ] &&  GRIVE_SUBDIR_RSYNC="rsync"
 fi
 
 exit_with_error(){
@@ -61,12 +63,12 @@ FILE_TIMEMARK=''
 START_TIMEMARK=''
 if [ "x$DIFF_BACKUP" = "xRSYNC" -o  "x$DIFF_BACKUP" = "xRSYNC-ONLY" ]; then
         RSYNC_ONLY="YES"
-        [ "x$2" != "x" ] && VHOST="$2"
+        [ "x$2" != 'x' ] && VHOST="$2"
 else
-        DIFF_NDAYS="$(echo $1 | sed -e 's/[^0-9]*//g')"
-	test "x$DIFF_NDAYS" = "x$1" || DIFF_NDAYS=''
-        if [ "x$DIFF_BACKUP" = "xDIFF-BACKUP" -o "x$DIFF_BACKUP" = "xDIFF" -o "x$DIFF_NDAYS" != "x" ]; then
-                if [ "x$DIFF_NDAYS" != "x" ]; then
+		DIFF_NDAYS="$(echo $1 | sed -e 's/[^0-9]*//g')"
+		test "x$DIFF_NDAYS" = "x$1" || DIFF_NDAYS=''
+        if [ "x$DIFF_BACKUP" = "xDIFF-BACKUP" -o "x$DIFF_BACKUP" = "xDIFF" -o "x$DIFF_NDAYS" != 'x' ]; then
+                if [ "x$DIFF_NDAYS" != 'x' ]; then
 					DIFF_BACKUP='DATE'
                     START_TIMEMARK="$(date -d "$DIFF_NDAYS day ago" "+%Y%m%d%H%M")"
 					FILE_TIMEMARK="/tmp/timemarkfile-$START_TIMEMARK"
@@ -74,12 +76,12 @@ else
 				else
 					DIFF_BACKUP='FILE'
 				fi
-                if [ "x$2" = "x" ]; then
+                if [ "x$2" = 'x' ]; then
                         DB_ONLY=''
                 else
                         DB_ONLY="$(echo $2 | tr '[:lower:]' '[:upper:]')"
-                        if [ "x$DB_ONLY" = "xDB-ONLY" ]; then
-                                [ "x$3" != "x" ] && VHOST="$3"
+                        if [ "x$DB_ONLY" = 'xDB-ONLY' ]; then
+                                [ "x$3" != 'x' ] && VHOST="$3"
                         else
                                 DB_ONLY=''
                                 VHOST="$2";
@@ -88,19 +90,19 @@ else
         else
                 DIFF_BACKUP=''
                 DB_ONLY="$(echo $1 | tr '[:lower:]' '[:upper:]')"
-                if [ "x$DB_ONLY" = "xDB-ONLY" ]; then
-                        [ "x$2" != "x" ] && VHOST="$2"
+                if [ "x$DB_ONLY" = 'xDB-ONLY' ]; then
+                        [ "x$2" != 'x' ] && VHOST="$2"
                 else
-                        [ "x$1" != "x" ] && VHOST="$1"
+                        [ "x$1" != 'x' ] && VHOST="$1"
                         DB_ONLY=''
                 fi
         fi
 fi
 PATH_BACKUP=''
-if [ "x$DB_ONLY" = "xDB-ONLY" ]; then
-        [ "x$3" != "x" ] && PATH_BACKUP="$3"
+if [ "x$DB_ONLY" = 'xDB-ONLY' ]; then
+        [ "x$3" != 'x' ] && PATH_BACKUP="$3"
 else
-        [ "x$2" != "x" ] && PATH_BACKUP="$2"
+        [ "x$2" != 'x' ] && PATH_BACKUP="$2"
 fi
 
 if [ "$( uname )" = 'FreeBSD' ]; then
@@ -124,27 +126,27 @@ if cd "$VHOSTS_DIR"; then
 		VHOST_PATH="$(echo $VHOST_ACCOUNTFILE | sed -E 's/\/account.txt$//')"
 		VHOST_HOSTNAME="$(echo "$VHOST_PATH" | sed "s#$VHOSTS_DIR/##")"
 		TMP_BACKUP="$VHOST_PATH/tmpdir_backup_$TIMEMARK"
-		[ "x$RSYNC_ONLY" = "x" ] && \
+		[ "x$RSYNC_ONLY" = 'x' ] && \
 			mkdir -p "$TMP_BACKUP"
 		USER="$(cat $VHOST_ACCOUNTFILE | grep '^USER:' | sed -E 's/^USER:\s*//' | sed 's/^[[:blank:]]*//g')"
 		MYSQL_PWD="$(cat $VHOST_ACCOUNTFILE | grep '^PWD_MYSQL:' | sed 's/^PWD_MYSQL:\s*//' | sed 's/^[[:blank:]]*//g')"
 		USER_GRIVE_EMAIL="$(cat $VHOST_ACCOUNTFILE | grep '^GRIVE_EMAIL:' | sed 's/^GRIVE_EMAIL:\s*//' | sed 's/^[[:blank:]]*//g')"
-		[ "x$USER_GRIVE_EMAIL" = "x" ] && USER_GRIVE_EMAIL="$GRIVE_EMAIL"
-		if [ "x$USER_GRIVE_EMAIL" = "x$GRIVE_EMAIL" -o "x$USER_GRIVE_EMAIL" = "x" ]; then
+		[ "x$USER_GRIVE_EMAIL" = 'x' ] && USER_GRIVE_EMAIL="$GRIVE_EMAIL"
+		if [ "x$USER_GRIVE_EMAIL" = "x$GRIVE_EMAIL" -o "x$USER_GRIVE_EMAIL" = 'x' ]; then
 			USER_GRIVE_DIR="$GRIVE_DIR"
 			USER_GRIVE_SUBDIR_BACKUPS="$GRIVE_SUBDIR_BACKUPS"
-			USER_GRIVE_EMAIL="";
+			USER_GRIVE_EMAIL=""
 		else
-			USER_GRIVE_EMAIL="$(echo $USER_GRIVE_EMAIL | sed -E 's;[^@]*;;g' | sed 's/^[[:blank:]]*//g' )"
+			USER_GRIVE_EMAIL="$(echo $USER_GRIVE_EMAIL | sed -E 's/[^@]*//g' | sed 's/^[[:blank:]]*//g' )"
 			USER_GRIVE_DIR="$(cat $VHOST_ACCOUNTFILE | grep '^GRIVE_DIR:' | sed 's/^GRIVE_DIR:\s*//' | sed 's/^[[:blank:]]*//g' )"
-			if [ "x$USER_GRIVE_DIR" = "x" ]; then
-				USER_GRIVE_SUBDIR_BACKUPS="$(cat $VHOST_ACCOUNTFILE | grep '^GRIVE_SUBDIR_BACKUPS:' | sed 's/^GRIVE_SUBDIR_BACKUPS:\s*//' | sed -E 's;^(/*)(.*[^/])*(/*)$;\2;g' | sed 's/^[[:blank:]]*//g' )"
+			if [ "x$USER_GRIVE_DIR" = 'x' ]; then
+				USER_GRIVE_SUBDIR_BACKUPS="$( cat $VHOST_ACCOUNTFILE | grep '^GRIVE_SUBDIR_BACKUPS:' | sed 's/^GRIVE_SUBDIR_BACKUPS:\s*//' | sed -E 's/^(/*)(.*[^\/])*(\/*)$/\2/g' | sed 's/^[[:blank:]]*//g' )"
 				if [ "$USER_GRIVE_EMAIL" = "@" ]; then
 					USER_GRIVE_DIR="$VHOST_PATH/gDrive"
 				else
 					USER_GRIVE_DIR="$VHOST_PATH"
 				fi
-				[ "x$USER_GRIVE_SUBDIR_BACKUPS" = "x" ] && USER_GRIVE_SUBDIR_BACKUPS="$GRIVE_SUBDIR_BACKUPS"
+				[ "x$USER_GRIVE_SUBDIR_BACKUPS" = 'x' ] && USER_GRIVE_SUBDIR_BACKUPS="$GRIVE_SUBDIR_BACKUPS"
 			fi
 		fi
 		[ ! -e "$USER_GRIVE_DIR" -o ! -e "$USER_GRIVE_DIR/$GRIVE_SUBDIR_BACKUPS" ] && \
@@ -157,12 +159,12 @@ if cd "$VHOSTS_DIR"; then
 				chmod 700 "$USER_GRIVE_DIR/$USER_GRIVE_SUBDIR_BACKUPS" \
 				touch "$USER_GRIVE_DIR/$GRIVE_SUBDIR_BACKUPS/.backup-ignore" && \
 				chown "$USER":"$WWW_GROUP" "$USER_GRIVE_DIR/$USER_GRIVE_SUBDIR_BACKUPS/.backup-ignore" )
-		if [ "x$RSYNC_ONLY" = "x" ]; then
+		if [ "x$RSYNC_ONLY" = 'x' ]; then
 			FIND_OPT_DIFF_BACKUP=""
 			TAR_OPT_DIFF_BACKUP=""
 			if [ "x$DIFF_BACKUP" = 'xDIFF' -o "x$DIFF_BACKUP" = 'xDATE' ]; then
 				if [ "x$DIFF_BACKUP" = 'xFILE' ]; then
-					if [ "x$DB_ONLY" = "xDB-ONLY" ]; then
+					if [ "x$DB_ONLY" = 'xDB-ONLY' ]; then
 						DIFF_BACKUPFILE="$(ls -t -1 $USER_GRIVE_DIR/$GRIVE_SUBDIR_BACKUPS/$VHOST_HOSTNAME-db-*.sql | head -n 1)"
 					else
 						DIFF_BACKUPFILE="$(ls -t -1 $USER_GRIVE_DIR/$GRIVE_SUBDIR_BACKUPS/$VHOST_HOSTNAME*.tbz | head -n 1)"
@@ -174,9 +176,9 @@ if cd "$VHOSTS_DIR"; then
 				fi
 			fi
 			cd "$VHOST_PATH"
-			mysqldump --opt "$USER" > "dump-$USER.sql" -u "$USER" --password="$MYSQL_PWD" || exit_with_error "BACKUP $VHOST NON ESEGUITO CORRETTAMENTE"
-			if [ "x$DB_ONLY" = "xDB-ONLY" ]; then
-				if [ -e "$DIFF_BACKUPFILE" -a "x$DIFF_BACKUP" = "xFILE" ]; then
+			echo 'mysqldump --host="$MYSQL_SERVER"  --user="$USER" --password="$MYSQL_PWD" --opt "$USER" > "dump-$USER.sql" || exit_with_error "BACKUP $VHOST NON ESEGUITO CORRETTAMENTE"'
+			if [ "x$DB_ONLY" = 'xDB-ONLY' ]; then
+				if [ -e "$DIFF_BACKUPFILE" -a "x$DIFF_BACKUP" = 'xFILE' ]; then
 					DIFF_DUMP_TIMEMARK="$(date -d "$(stat -c %y $DIFF_BACKUPFILE)"  "+%Y%m%d%H%M")"
 					diff "$DIFF_BACKUPFILE" "$VHOST_PATH/dump-$USER.sql" > "$VHOST_PATH/dump-$USER-$DIFF_DUMP_TIMEMARK-$TIMEMARK.diff"
 				else
@@ -187,7 +189,7 @@ if cd "$VHOSTS_DIR"; then
 					fi
 				fi
 			else
-				if [ -e "$DIFF_BACKUPFILE" -a "x$DIFF_BACKUP" = "xFILE" ]; then
+				if [ -e "$DIFF_BACKUPFILE" -a "x$DIFF_BACKUP" = 'xFILE' ]; then
 					FIND_OPT_DIFF_BACKUP=" -newer $FILE_TIMEMARK"
 					TAR_OPT_DIFF_BACKUP=" --newer=$DIFF_BACKUPFILE"
 					cd "$TMP_BACKUP"
@@ -213,21 +215,21 @@ if cd "$VHOSTS_DIR"; then
 			[ -e "$TMP_BACKUP" ] && \
 				( rm -R "$TMP_BACKUP" || exit_with_error "ERROR: CANNOT REMOVE TMP DIRECTORY" )
 
-			if [ "x$TAR_OPT_DIFF_BACKUP" = "x" ]; then
+			if [ "x$TAR_OPT_DIFF_BACKUP" = 'x' ]; then
 				BACKUPNAME="$VHOST_HOSTNAME-$TIMEMARK"
 			else
 				BACKUPNAME="$VHOST_HOSTNAME-$DIFF_DUMP_TIMEMARK-$TIMEMARK"
 			fi
-			if [ "x$DB_ONLY" = "xDB-ONLY" ]; then
+			if [ "x$DB_ONLY" = 'xDB-ONLY' ]; then
 				BACKUPNAME="$( echo $BACKUPNAME | sed -E "s;$VHOST_HOSTNAME-;$VHOST_HOSTNAME-db-$USER-;g" )"
-				if [ "x$PATH_BACKUP" = "x" ]; then
+				if [ "x$PATH_BACKUP" = 'x' ]; then
 					BACKUP_TGT_DIR="$USER_GRIVE_DIR/$GRIVE_SUBDIR_BACKUPS/"
 				else
 					BACKUP_TGT_DIR=$PATH_BACKUP
 				fi
 				mv "dump-$USER.sql" "$BACKUP_TGT_DIR/$BACKUPNAME.sql" || exit_with_error "BACKUP '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE"
 				chown "$USER":"$WWW_GROUP" "$BACKUP_TGT_DIR/$BACKUPNAME.sql" || exit_with_error "BACKUP '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE"
-				if [  "x$DIFF_BACKUP" = 'xFILE' -a "x$DIFF_BACKUPFILE" != "x" ]; then
+				if [  "x$DIFF_BACKUP" = 'xFILE' -a "x$DIFF_BACKUPFILE" != 'x' ]; then
 					BACKUPNAME_DIFF="$VHOST_HOSTNAME-db-$USER-$DIFF_DUMP_TIMEMARK-$TIMEMARK"
 					mv "dump-$USER-$DIFF_DUMP_TIMEMARK-$TIMEMARK.diff" "$BACKUP_TGT_DIR/$BACKUPNAME_DIFF.sql.diff" || exit_with_error "BACKUP '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE"
 					chown "$USER":"$WWW_GROUP" "$BACKUP_TGT_DIR/$BACKUPNAME_DIFF.sql.diff" || exit_with_error "BACKUP '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE"
@@ -271,17 +273,17 @@ if cd "$VHOSTS_DIR"; then
 				[ "x$SAMBA_CONF" = "xSAVE" ] && ( rm "samba-share.conf"  || exit_with_error "CLEAN TMP FILES '$VHOST_HOSTNAME' NON ESEGUITO CORRETTAMENTE" )
 			fi
 			
-			if [ "x$DIFF_BACKUP" = "x" ]; then
+			if [ "x$DIFF_BACKUP" = 'x' ]; then
 				echo "  BACKUP $VHOST_HOSTNAME ESEGUITO CORRETTAMENTE"
-				if [ "x$DB_ONLY" = "xDB-ONLY" ]; then
+				if [ "x$DB_ONLY" = 'xDB-ONLY' ]; then
 					echo "  	CREATO: '$BACKUP_TGT_DIR/$BACKUPNAME.sql'"
 				else
 					echo "  	CREATO: '$USER_GRIVE_DIR/$GRIVE_SUBDIR_BACKUPS/$BACKUPNAME.tbz'"
 				fi
 			else
-				if [ "x$DIFF_BACKUP" = "xFILE" ]; then
+				if [ "x$DIFF_BACKUP" = 'xFILE' ]; then
 					echo "  BACKUP DIFFERENZIALE DI '$VHOST_HOSTNAME' ESEGUITO CORRETTAMENTE"
-					if [ "x$DB_ONLY" = "xDB-ONLY" ]; then
+					if [ "x$DB_ONLY" = 'xDB-ONLY' ]; then
 						echo "  	CREATO: '$BACKUP_TGT_DIR/$BACKUPNAME.sql'"
 						echo "  	COTENENTE COPIA DEL DATABASE"
 						echo "  	CREATO: '$BACKUP_TGT_DIR/$BACKUPNAME_DIFF.sql.diff'"
@@ -290,9 +292,9 @@ if cd "$VHOSTS_DIR"; then
 					fi
 					echo "  	COTENENTE LE VARIAZIONI DAL PRECEDENTE: '$DIFF_BACKUPFILE'"
 				else 
-					if [ "x$DIFF_BACKUP" = "xDATE" ]; then
+					if [ "x$DIFF_BACKUP" = 'xDATE' ]; then
 						echo "  BACKUP DEGLI ULTIMI $DIFF_NDAYS GIORNI DI '$VHOST_HOSTNAME' ESEGUITO CORRETTAMENTE"
-						if [ "x$DB_ONLY" = "xDB-ONLY" ]; then
+						if [ "x$DB_ONLY" = 'xDB-ONLY' ]; then
 							echo "  	CREATO: '$BACKUP_TGT_DIR/$BACKUPNAME.sql'"
 						else
 							echo "  	CREATO: '$USER_GRIVE_DIR/$GRIVE_SUBDIR_BACKUPS/$BACKUPNAME.tbz'"
@@ -303,12 +305,12 @@ if cd "$VHOSTS_DIR"; then
 		fi
 		# RSYNC
 		USER_RSYNC="$(cat $VHOST_ACCOUNTFILE | grep '^RSYNC:' | sed 's/^RSYNC:\s*//' | sed 's/^[[:blank:]]*//g')"
-		if [ "x$USER_RSYNC" != "x" ]; then
+		if [ "x$USER_RSYNC" != 'x' ]; then
 				USER_GRIVE_SUBDIR_RSYNC="$(cat $VHOST_ACCOUNTFILE | grep '^GRIVE_SUBDIR_RSYNC:' | sed 's/^GRIVE_SUBDIR_RSYNC:\s*//'  | sed 's/^[[:blank:]]*//g')"
-				[ "x$USER_GRIVE_SUBDIR_RSYNC" = "x" ] && USER_GRIVE_SUBDIR_RSYNC="$GRIVE_SUBDIR_RSYNC"
+				[ "x$USER_GRIVE_SUBDIR_RSYNC" = 'x' ] && USER_GRIVE_SUBDIR_RSYNC="$GRIVE_SUBDIR_RSYNC"
 				[ ! -e "$USER_GRIVE_DIR/$USER_GRIVE_SUBDIR_RSYNC" ] && mkdir -p "$USER_GRIVE_DIR/$USER_GRIVE_SUBDIR_RSYNC"
 				for rsync_item in $USER_RSYNC; do
-						[ "x$rsync_item" = "x" ] && continue
+						[ "x$rsync_item" = 'x' ] && continue
 						rsync_from="$( echo "$rsync_item" | sed -E 's/^([^:]*):?(.*)$/\1/' )"
 						if [ "x$rsync_from" = "x$rsync_item" ]; then
 								rsync_to="$rsync_from"

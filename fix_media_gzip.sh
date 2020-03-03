@@ -56,8 +56,8 @@ echo "USER: ${USER}:${WWW_GROUP}"
 find ./media \
 	-type file -size +1000c \
 	\( -name "*.css" -o -name "*.js" -o -name "*.html" \) \
-	\( -exec test -e "{}.gz" -a ! "{}" -ot "{}.gt" \; \
-		-o \( \
+	\( -exec test ! -e "{}.gz" -o  "{}" -nt "{}.gz" \; \
+		-a \( \
 			-exec echo "{} => {}.gz" \; \
 			-exec gzip -k -f "{}" \; \
 			-exec chmod $CHMOD_OPTIONS 640 "{}.gz" \; \
