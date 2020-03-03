@@ -176,7 +176,7 @@ if cd "$VHOSTS_DIR"; then
 				fi
 			fi
 			cd "$VHOST_PATH"
-			echo 'mysqldump --host="$MYSQL_SERVER"  --user="$USER" --password="$MYSQL_PWD" --opt "$USER" > "dump-$USER.sql" || exit_with_error "BACKUP $VHOST NON ESEGUITO CORRETTAMENTE"'
+			mysqldump --host="$MYSQL_SERVER"  --user="$USER" --password="$MYSQL_PWD" --opt "$USER" > "dump-$USER.sql" || exit_with_error "BACKUP $VHOST NON ESEGUITO CORRETTAMENTE"
 			if [ "x$DB_ONLY" = 'xDB-ONLY' ]; then
 				if [ -e "$DIFF_BACKUPFILE" -a "x$DIFF_BACKUP" = 'xFILE' ]; then
 					DIFF_DUMP_TIMEMARK="$(date -d "$(stat -c %y $DIFF_BACKUPFILE)"  "+%Y%m%d%H%M")"
