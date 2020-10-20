@@ -49,7 +49,8 @@ elif [ "$( uname )" = 'Linux' ]; then
 fi
 
 
-
+echo "CHANGE JOOMLA OWN/MOD OF FILES OF VHOST: $VHOST"
+echo "MOVE TO: $VHOSTS_DIR/$VHOST/$HTTPDOCS_DIR"
 cd "$VHOSTS_DIR/$VHOST/$HTTPDOCS_DIR"
 USE_FTP="$(cat configuration.php | grep ftp_enable | grep -v -E -e '\s*\/\/' | sed -E -e "s/([^']*')([^'])('.*)/\2/")"
 if [ "x$USER" = "xDEVEL" ]; then
